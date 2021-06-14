@@ -307,7 +307,7 @@ void classic_combine_streams(
                     for (size_t i = 0; i < row_bytes[s]; ++i) {
                         out[out_pos / 8] |=
                             in_blocks[s][in_pos[s] + i] >> (out_pos % 8);
-                        if (j >= (8 - out_pos % 8)) {
+                        if (j > (8 - out_pos % 8)) {
                             out[out_pos / 8 + 1] |=
                                 in_blocks[s][in_pos[s] + i] << (8 - out_pos % 8);
                         }
