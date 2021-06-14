@@ -306,10 +306,10 @@ void classic_combine_streams(
                     size_t j = row_bits[s];
                     for (size_t i = 0; i < row_bytes[s]; ++i) {
                         out[out_pos / 8] |=
-                            in_blocks[s][in_pos[s] + i] >> (out_pos % 8);
+                            in_blocks[s][in_pos[s] + i] << (out_pos % 8);
                         if (out_pos % 8 != 0 && j > (8 - out_pos % 8)) {
                             out[out_pos / 8 + 1] |=
-                                in_blocks[s][in_pos[s] + i] << (8 - out_pos % 8);
+                                in_blocks[s][in_pos[s] + i] >> (8 - out_pos % 8);
                         }
                         out_pos += std::min<size_t>(8, row_bits[s] - 8 * i);
                         j -= 8;
