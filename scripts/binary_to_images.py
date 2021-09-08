@@ -1,4 +1,3 @@
-import numpy
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -6,6 +5,7 @@ import argparse
 import shutil
 import logging
 import sys
+import math
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 def get_args():
@@ -26,8 +26,10 @@ def compress(input, output):
     logging.info("Reading binary object...")
     input_fh = open(input, "rb")
     data = input_fh.read()
-    data = numpy.frombuffer(data, np.uint8)
-    data = data.reshape((data.size, 1))
+    data = np.frombuffer(data, np.uint8)
+    dimension = math.ceil(math.sqrt(data.size))
+    data = np.pad(data, (0, dimension*dimension - data.size))
+    data = data.reshape((dimension, dimension))
 
     # serialise the numpy array with no compression
     logging.info("Serialising numpy object...")
