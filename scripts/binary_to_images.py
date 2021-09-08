@@ -6,7 +6,8 @@ import shutil
 import logging
 import sys
 import math
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S',
+                    format='%(asctime)s %(levelname)-8s %(message)s')
 
 def get_args():
     parser = argparse.ArgumentParser(description='Convert a binary object to a compressed image.')
@@ -42,15 +43,21 @@ def compress(input, output):
     # compress image using several algorithms
     logging.info("Compressing using PNG...")
     image.save(str(output / f"{input_filename}.png"), 'PNG', optimize=True)
+    logging.info("Done!")
 
-    logging.info("Compressing using BMP RLE...")
-    image.save(str(output / f"{input_filename}.bmp_rle.bmp"), 'BMP', compression="bmp_rle")
+    # Note: removed as the BMP format is not suited for very large files:
+    # It errors out with ValueError: File size is too large for the BMP format
+    # logging.info("Compressing using BMP RLE...")
+    # image.save(str(output / f"{input_filename}.bmp_rle.bmp"), 'BMP', compression="bmp_rle")
+    # logging.info("Done!")
 
     tiff_compression_methods = [
-        "lzma", "packbits", "tiff_adobe_deflate", "tiff_lzw", "zstd"]
+        "lzma", "packbits", "tiff_adobe_deflate", "tiff_lzw"]
     for tiff_compression_method in tiff_compression_methods:
         logging.info(f"Compressing using TIFF {tiff_compression_method}...")
         image.save(str(output / f"{input_filename}.{tiff_compression_method}.tiff"), "TIFF", compression=tiff_compression_method)
+        logging.info("Done!")
+
 
 def main():
     args = get_args()
