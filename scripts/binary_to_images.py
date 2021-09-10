@@ -46,9 +46,14 @@ def compress(input, output, width):
     input_fh = open(input, "rb")
     data = input_fh.read()
     data = np.frombuffer(data, np.uint8)
+
     height = math.ceil(data.size/width)
     data = np.pad(data, (0, height*width - data.size))
     data = data.reshape((height, width))
+
+    logging.info(f"Data size = {data.size}")
+    logging.info(f"Width = {width}")
+    logging.info(f"Height = {height}")
 
     # serialise the numpy array with no compression
     logging.info("Serialising numpy object...")
@@ -65,6 +70,7 @@ def compress(input, output, width):
     for index in range(0, math.ceil(height/height_of_each_sub_image)):
         image_row_from = index*height_of_each_sub_image
         image_row_to = min(image_row_from+height_of_each_sub_image, height)
+        logging.info(f"Cropping image: {(0, image_row_from, width, image_row_to)}")
         sub_image = image.crop((0, image_row_from, width, image_row_to))
         compress_image(sub_image, output, input_filename, f"part_{index}")
 
