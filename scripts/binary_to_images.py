@@ -13,10 +13,28 @@ def get_args():
     parser = argparse.ArgumentParser(description='Convert a binary object to a compressed image.')
     parser.add_argument('--input', type=str, help='Binary object to be compressed', required=True)
     parser.add_argument('--output_dir', type=str, help='Where to save the diferent compressions', required=True)
+    parser.add_argument('--width', type=int, default=4000, help='Width of the image (should equal nb of samples)')
     args = parser.parse_args()
     return args
 
-def compress(input, output):
+
+def compress_core(functor, name):
+    logging.info(f"Compressing using {name}...")
+    functor()
+    logging.info("Done!")
+
+
+def compress_image(image, output, input_filename, part):
+    # compress image using several algorithms
+    compress_core(lambda: image.save(str(output / f"{input_filename}.{part}.png"), 'PNG', optimize=True), "PNG")
+    tiff_compression_methods = [
+        "lzma", "packbits", "tiff_adobe_deflate", "tiff_lzw"]
+    for tiff_compression_method in tiff_compression_methods:
+        compress_core(lambda: image.save(str(output / f"{input_filename}.{part}.{tiff_compression_method}.tiff"), "TIFF",
+                                         compression=tiff_compression_method), f"TIFF {tiff_compression_method}")
+
+
+def compress(input, output, width):
     input_filename = input.name
 
     # first copy the original index
@@ -28,9 +46,9 @@ def compress(input, output):
     input_fh = open(input, "rb")
     data = input_fh.read()
     data = np.frombuffer(data, np.uint8)
-    dimension = math.ceil(math.sqrt(data.size))
-    data = np.pad(data, (0, dimension*dimension - data.size))
-    data = data.reshape((dimension, dimension))
+    height = math.ceil(data.size/width)
+    data = np.pad(data, (0, height*width - data.size))
+    data = data.reshape((height, width))
 
     # serialise the numpy array with no compression
     logging.info("Serialising numpy object...")
@@ -38,25 +56,17 @@ def compress(input, output):
         np.save(data_npy_fh, data)
 
     # create image from numpy array
-    image = Image.fromarray(data, 'L')
+    image = Image.fromarray(data, '1')
 
-    # compress image using several algorithms
-    logging.info("Compressing using PNG...")
-    image.save(str(output / f"{input_filename}.png"), 'PNG', optimize=True)
-    logging.info("Done!")
+    compress_image(image, output, input_filename, "all")
 
-    # Note: removed as the BMP format is not suited for very large files:
-    # It errors out with ValueError: File size is too large for the BMP format
-    # logging.info("Compressing using BMP RLE...")
-    # image.save(str(output / f"{input_filename}.bmp_rle.bmp"), 'BMP', compression="bmp_rle")
-    # logging.info("Done!")
-
-    tiff_compression_methods = [
-        "lzma", "packbits", "tiff_adobe_deflate", "tiff_lzw"]
-    for tiff_compression_method in tiff_compression_methods:
-        logging.info(f"Compressing using TIFF {tiff_compression_method}...")
-        image.save(str(output / f"{input_filename}.{tiff_compression_method}.tiff"), "TIFF", compression=tiff_compression_method)
-        logging.info("Done!")
+    # split and compress
+    height_of_each_sub_image = 25_000
+    for index in range(0, math.ceil(height/height_of_each_sub_image)):
+        image_row_from = index*height_of_each_sub_image
+        image_row_to = min(image_row_from+height_of_each_sub_image, height)
+        sub_image = image.crop((0, image_row_from, width, image_row_to))
+        compress_image(sub_image, output, input_filename, f"part_{index}")
 
 
 def main():
@@ -64,6 +74,6 @@ def main():
     input = Path(args.input)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
-    compress(input, output_dir)
+    compress(input, output_dir, args.width)
 
 main()
