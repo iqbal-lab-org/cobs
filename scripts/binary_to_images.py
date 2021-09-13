@@ -6,6 +6,12 @@ import shutil
 import logging
 import sys
 import math
+
+# avoids error:
+# PIL.Image.DecompressionBombError: Image size (200000000 pixels) exceeds limit of 178956970 pixels, could be decompression bomb DOS attack.
+# TODO: should we really avoid this error?
+Image.MAX_IMAGE_PIXELS = None  # avoids
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S',
                     format='%(asctime)s %(levelname)-8s %(message)s')
 
