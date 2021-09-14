@@ -6,6 +6,7 @@ import shutil
 import logging
 import sys
 import math
+from scripts.decompress_and_check_image import are_COBS_indexes_identical
 
 # avoids error:
 # PIL.Image.DecompressionBombError: Image size (200000000 pixels) exceeds limit of 178956970 pixels, could be decompression bomb DOS attack.
@@ -104,6 +105,14 @@ def compress(input_index, output, width, number_of_rows_per_batch):
     logging.info("Writing metadata to uncompress COBS index")
     with open(output / f"{input_filename}.cobs_header.metadata", "w") as cobs_metadata_fh:
         print(f"BF_size = {bf_data_size_before_padding}", file=cobs_metadata_fh)
+
+    logging.info("Checking compression for correctness...")
+    cobs_indexes_are_identical = are_COBS_indexes_identical(str(output / f"{input_filename}.all.png"),
+                                                            str(output / f"{input_filename}.cobs_header.bin"),
+                                                            str(output / f"{input_filename}.cobs_header.metadata"),
+                                                            str(input_index))
+    assert cobs_indexes_are_identical, "The COBS compressed index is corrupted"
+    logging.info("The COBS compressed index is Ok!")
 
     split_and_compress(image, width, height, number_of_rows_per_batch, str(output / input_filename))
 
