@@ -98,10 +98,6 @@ def compress(input_index, output, width, number_of_rows_per_batch):
     image, height, bf_data_size_before_padding = compress_bloom_filter_data(bf_data, width,
                                                                             str(output / f"{input_filename}.all"))
 
-    logging.info("Serialising numpy object...")
-    with open(output / f"{input_filename}.npy", "wb") as data_npy_fh:
-        np.save(data_npy_fh, bf_data)
-
     logging.info("Writing metadata to uncompress COBS index")
     with open(output / f"{input_filename}.cobs_header.metadata", "w") as cobs_metadata_fh:
         print(f"BF_size = {bf_data_size_before_padding}", file=cobs_metadata_fh)
