@@ -28,20 +28,50 @@ def get_args():
     return args
 
 
-def compress_core(functor, name):
-    logging.info(f"Compressing using {name}...")
-    functor()
+def compress_image(image, filename):
+    logging.info(f"Compressing using PNG...")
+    image.save(f"{filename}.png", 'PNG', optimize=True, bits=1)
     logging.info("Done!")
 
 
-def compress_image(image, output, input_filename, part, use_tiff_methods=False):
-    # compress image using several algorithms
-    compress_core(lambda: image.save(str(output / f"{input_filename}.{part}.png"), 'PNG', optimize=True), "PNG")
-    tiff_compression_methods = ["lzma", "packbits", "tiff_adobe_deflate", "tiff_lzw"] if use_tiff_methods else []
-    for tiff_compression_method in tiff_compression_methods:
-        compress_core(lambda: image.save(str(output / f"{input_filename}.{part}.{tiff_compression_method}.tiff"),
-                                         "TIFF",
-                                         compression=tiff_compression_method), f"TIFF {tiff_compression_method}")
+class DataNotAlignable(Exception):
+    pass
+
+
+def compress_bloom_filter_data(bf_data, width, filename):
+    bf_data = np.frombuffer(bf_data, np.uint8)
+    bf_data = np.unpackbits(bf_data)
+    bf_data = bf_data.astype(bool)
+    bf_data_size_before_padding = bf_data.size
+
+    data_is_not_alignable = width % 8 != 0
+    if data_is_not_alignable:
+        raise DataNotAlignable("Error: width is not divisible by 8, data will not be aligned")
+
+    height = math.ceil(bf_data.size / width)
+    bf_data = np.pad(bf_data, (0, height*width - bf_data.size))
+    bf_data = bf_data.reshape((height, width))
+
+    logging.info(f"Bloom filter size before padding = {bf_data_size_before_padding}")
+    logging.info(f"Bloom filter size after padding = {bf_data.size}")
+    logging.info(f"Width = {width}")
+    logging.info(f"Height = {height}")
+
+    logging.info("Creating image from numpy matrix...")
+    image = Image.fromarray(bf_data)
+
+    compress_image(image, filename)
+
+    return image, height, bf_data_size_before_padding
+
+
+def split_and_compress(image, width, height, number_of_rows_per_batch, filename):
+    for index in range(0, math.ceil(height / number_of_rows_per_batch)):
+        image_row_from = index * number_of_rows_per_batch
+        image_row_to = min(image_row_from + number_of_rows_per_batch, height)
+        logging.info(f"Cropping image: {(0, image_row_from, width, image_row_to)}")
+        sub_image = image.crop((0, image_row_from, width, image_row_to))
+        compress_image(sub_image, f"{filename}.part_{index}")
 
 
 def compress(input_index, output, width, number_of_rows_per_batch):
@@ -64,30 +94,18 @@ def compress(input_index, output, width, number_of_rows_per_batch):
 
     logging.info("Compressing bloom filter data...")
     bf_data = data[bf_matrix_start_pos:]
-    bf_data = np.frombuffer(bf_data, np.uint8)
-    height = math.ceil(bf_data.size/width)
-    bf_data = np.pad(bf_data, (0, height*width - bf_data.size))
-    bf_data = bf_data.reshape((height, width))
-    logging.info(f"Bloom filter size = {bf_data.size}")
-    logging.info(f"Width = {width}")
-    logging.info(f"Height = {height}")
+    image, height, bf_data_size_before_padding = compress_bloom_filter_data(bf_data, width,
+                                                                            str(output / f"{input_filename}.all"))
 
     logging.info("Serialising numpy object...")
     with open(output / f"{input_filename}.npy", "wb") as data_npy_fh:
         np.save(data_npy_fh, bf_data)
 
-    logging.info("Creating image from numpy matrix...")
-    image = Image.fromarray(bf_data, '1')
+    logging.info("Writing metadata to uncompress COBS index")
+    with open(output / f"{input_filename}.cobs_header.metadata", "w") as cobs_metadata_fh:
+        print(f"BF_size = {bf_data_size_before_padding}", file=cobs_metadata_fh)
 
-    compress_image(image, output, input_filename, "all")
-
-    # split and compress
-    for index in range(0, math.ceil(height / number_of_rows_per_batch)):
-        image_row_from = index * number_of_rows_per_batch
-        image_row_to = min(image_row_from + number_of_rows_per_batch, height)
-        logging.info(f"Cropping image: {(0, image_row_from, width, image_row_to)}")
-        sub_image = image.crop((0, image_row_from, width, image_row_to))
-        compress_image(sub_image, output, input_filename, f"part_{index}")
+    split_and_compress(image, width, height, number_of_rows_per_batch, str(output / input_filename))
 
 
 def main():
@@ -98,4 +116,5 @@ def main():
     compress(input_index, output_dir, args.width, args.number_of_rows_per_batch)
 
 
-main()
+if __name__ == "__main__":
+    main()
