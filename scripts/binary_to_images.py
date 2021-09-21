@@ -63,7 +63,7 @@ def compress_bloom_filter_data(bf_data, width, filename):
 
     compress_image(image, filename)
 
-    return image, height, bf_data_size_before_padding
+    return bf_data, image, height, bf_data_size_before_padding
 
 
 def split_and_compress(image, width, height, number_of_rows_per_batch, filename):
@@ -75,6 +75,12 @@ def split_and_compress(image, width, height, number_of_rows_per_batch, filename)
         compress_image(sub_image, f"{filename}.part_{index}")
 
 
+def create_transposed_bf_matrix(bf_data, transposed_bf_matrix_fh):
+    transposed_bf_data = np.transpose(bf_data)
+    transposed_bf_data = np.packbits(transposed_bf_data)
+    transposed_bf_matrix_fh.write(transposed_bf_data.tobytes())
+
+
 def compress(input_index, output, width, number_of_rows_per_batch):
     input_filename = input_index.name
 
@@ -82,8 +88,8 @@ def compress(input_index, output, width, number_of_rows_per_batch):
     shutil.copy(str(input_index), output)
 
     logging.info("Reading binary object...")
-    input_fh = open(input_index, "rb")
-    data = input_fh.read()
+    with open(input_index, "rb") as input_fh:
+        data = input_fh.read()
 
     logging.info("Extracting and writing header...")
     first_classic_index_pos = data.index(b"CLASSIC_INDEX")
@@ -95,12 +101,18 @@ def compress(input_index, output, width, number_of_rows_per_batch):
 
     logging.info("Compressing bloom filter data...")
     bf_data = data[bf_matrix_start_pos:]
-    image, height, bf_data_size_before_padding = compress_bloom_filter_data(bf_data, width,
+    bf_data, image, height, bf_data_size_before_padding = compress_bloom_filter_data(bf_data, width,
                                                                             str(output / f"{input_filename}.all"))
 
     logging.info("Writing metadata to uncompress COBS index")
     with open(output / f"{input_filename}.cobs_header.metadata", "w") as cobs_metadata_fh:
         print(f"BF_size = {bf_data_size_before_padding}", file=cobs_metadata_fh)
+
+
+    logging.info("Writing transposed BF matrix")
+    with open(output / f"{input_filename}.bf_matrix.transposed", "wb") as transposed_bf_matrix_fh:
+        create_transposed_bf_matrix(bf_data, transposed_bf_matrix_fh)
+
 
     logging.info("Checking compression for correctness...")
     cobs_indexes_are_identical = are_COBS_indexes_identical(str(output / f"{input_filename}.all.png"),

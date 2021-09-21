@@ -9,3 +9,4 @@ python/docs/_generated
 *.cobs_classic
 *.cobs_compact
 __pycache__
+scripts/tests/test_create_transposed_bf_matrix.out
