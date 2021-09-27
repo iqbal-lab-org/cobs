@@ -1,0 +1,124 @@
+from pathlib import Path
+from glob import glob
+import json
+import logging
+import random
+import string
+import os
+
+configfile: "config.yaml"
+
+# ======================================================
+# Helper functions
+# ======================================================
+def get_all_ordering_files(ordering_dir):
+    return [Path(file) for file in glob(f"{ordering_dir}/**/*.txt", recursive=True)]
+def get_order_name_to_order_path(all_ordering_files):
+    return {
+        ordering_file.with_suffix("").name: Path(ordering_file).absolute()
+        for ordering_file in all_ordering_files
+    }
+
+
+def get_all_assemblies_files(assemblies_dir):
+    return glob(f"{assemblies_dir}/**/*.contigs.fa.gz", recursive=True)
+def get_sample_name_to_assembly_path(all_assemblies_files):
+    return {
+        Path(assembly_file).name.replace(".contigs.fa.gz", ""): str(Path(assembly_file).absolute())
+        for assembly_file in all_assemblies_files
+    }
+
+
+def get_order(filepath):
+    with open(filepath) as order_fh:
+        order = [line.strip() for line in order_fh.readlines()]
+    return order
+
+
+def get_random_name(length=40):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for _ in range(length))
+def get_n_random_sorted_names(n):
+    random_names = set()
+    while len(random_names) < n:
+        random_names.add(get_random_name())
+    return sorted(list(random_names))
+# ======================================================
+# Helper functions
+# ======================================================
+
+# ======================================================
+# Rules and functions of rules
+# ======================================================
+rule all:
+    input:
+        expand(f"{config['output_dir']}/reordered_assemblies/{{order_name}}",
+        order_name=get_order_name_to_order_path(get_all_ordering_files(config['ordering_dir'])))
+
+
+rule build_sample_name_to_assembly_path:
+    input:
+        assemblies_dir = config['assemblies_dir']
+    output:
+        sample_name_to_assembly_path_json = f"{config['output_dir']}/sample_name_to_assembly_path.json"
+    threads: 1
+    resources:
+        mem_mb=2000
+    log:
+        "logs/build_sample_name_to_assembly_path.log"
+    run:
+        all_assembly_files = get_all_assemblies_files(input.assemblies_dir)
+        sample_name_to_assembly_path = get_sample_name_to_assembly_path(all_assembly_files)
+        with open(output.sample_name_to_assembly_path_json, 'w') as json_fh:
+            json.dump(sample_name_to_assembly_path, json_fh)
+
+
+def reorder_genomes(sample_name_to_assembly_path, order, output_dir):
+    print(sample_name_to_assembly_path)
+    logging.info(f"Creating {output_dir}")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=False)
+    random_names = get_n_random_sorted_names(len(order))
+    for sample_name, random_name in zip(order, random_names):
+        source = Path(sample_name_to_assembly_path[sample_name])
+        source_suffixes = "".join(source.suffixes)
+        dest = output_dir.resolve() / f"{random_name}{source_suffixes}"
+        logging.info(f"{source} -> {dest}")
+        os.symlink(str(source), str(dest))
+
+rule reorder_genomes:
+    input:
+        order_file = lambda wildcards: get_order_name_to_order_path(get_all_ordering_files(config['ordering_dir']))[wildcards.order_name],
+        sample_name_to_assembly_path_json = rules.build_sample_name_to_assembly_path.output.sample_name_to_assembly_path_json
+    output:
+        reordered_assemblies_dir = directory(f"{config['output_dir']}/reordered_assemblies/{{order_name}}")
+    threads: 1
+    resources:
+        mem_mb=2000
+    log:
+        "logs/reorder_genomes_{order_name}.log"
+    run:
+        with open(input.sample_name_to_assembly_path_json) as json_fh:
+            sample_name_to_assembly_path = json.load(json_fh)
+        print(sample_name_to_assembly_path)
+        order = get_order(input.order_file)
+        reorder_genomes(sample_name_to_assembly_path, order, output.reordered_assemblies_dir)
+
+
+rule run_COBS:
+    input:
+        reordered_assembly_dir = rules.reorder_genomes.output.reordered_assemblies_dir
+    output:
+        COBS_out_dir = directory(f"{config['output_dir']}/COBS_out/{{order_name}}")
+    threads: 8
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * 16000
+    log:
+        "logs/run_COBS_{order_name}.log"
+    shell:
+        "cobs classic-construct --clobber -T {threads} {input.reordered_assembly_dir} {output.COBS_out_dir}/index.cobs_classic"
+
+#
+#
+# rule compress_COBS_index:
+#
