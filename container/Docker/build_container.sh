@@ -9,4 +9,4 @@ echo "will create, by default, image cobs:master"
 cobs_repo_URL=${1:-"https://github.com/bingmann/cobs"}
 commit_id_or_branch=${2:-"master"}
 
-sudo docker build --build-arg cobs_repo_URL=${cobs_repo_URL} --build-arg commit_id_or_branch=${commit_id_or_branch} . -t cobs:"$commit_id_or_branch"
+docker build --build-arg cobs_repo_URL=${cobs_repo_URL} --build-arg commit_id_or_branch=${commit_id_or_branch} . -t cobs:"$commit_id_or_branch"
