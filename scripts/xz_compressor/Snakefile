@@ -80,7 +80,7 @@ def reorder_genomes(sample_name_to_assembly_path, order, output_dir):
     for sample_name, random_name in zip(order, random_names):
         source = Path(sample_name_to_assembly_path[sample_name])
         source_suffixes = "".join(source.suffixes)
-        dest = output_dir.resolve() / f"{random_name}{source_suffixes}"
+        dest = output_dir.resolve() / f"{random_name}_{sample_name}{source_suffixes}"
         logging.info(f"{source} -> {dest}")
         os.symlink(str(source), str(dest))
 
