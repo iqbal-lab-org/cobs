@@ -40,7 +40,7 @@ StreamPos get_stream_pos(std::istream& is) {
 
 //! return remaining bytes in stream and rewind to the current position.
 static inline
-size_t get_stream_size(std::istream& is) {
+uint64_t get_stream_size(std::istream& is) {
     std::streamoff curr_pos = is.tellg();
     is.seekg(0, std::ios::end);
     std::streamoff end_pos = is.tellg();

@@ -70,23 +70,23 @@ void create_hashes(
     const std::shared_ptr<IndexSearchFile>& index_file)
 {
     uint32_t term_size = index_file->term_size();
-    size_t num_hashes = index_file->num_hashes();
+    uint64_t num_hashes = index_file->num_hashes();
     uint8_t canonicalize = index_file->canonicalize();
 
-    size_t num_terms = query.size() - term_size + 1;
+    uint64_t num_terms = query.size() - term_size + 1;
     hashes.resize(num_hashes * num_terms);
 
     const char* query_8 = query.data();
 
     if (canonicalize == 0) {
-        for (size_t i = 0; i < num_terms; i++) {
-            for (size_t j = 0; j < num_hashes; j++) {
+        for (uint64_t i = 0; i < num_terms; i++) {
+            for (uint64_t j = 0; j < num_hashes; j++) {
                 hashes[i * num_hashes + j] = XXH64(query_8 + i, term_size, j);
             }
         }
     }
     else if (canonicalize == 1) {
-        for (size_t i = 0; i < num_terms; i++) {
+        for (uint64_t i = 0; i < num_terms; i++) {
             bool good =
                 canonicalize_kmer(query_8 + i, canonicalize_buffer, term_size);
 
@@ -95,7 +95,7 @@ void create_hashes(
                     "Only ACGT are allowed.");
             }
 
-            for (size_t j = 0; j < num_hashes; j++) {
+            for (uint64_t j = 0; j < num_hashes; j++) {
                 hashes[i * num_hashes + j] = XXH64(
                     canonicalize_buffer, term_size, j);
             }
@@ -111,9 +111,9 @@ void counts_to_result(
     const std::vector<std::shared_ptr<IndexSearchFile> >& index_files,
     const Score* scores,
     std::vector<SearchResult>& result,
-    const std::vector<size_t>& thresholds,
-    size_t num_results, size_t max_counts,
-    const std::vector<size_t>& sum_doc_counts)
+    const std::vector<uint64_t>& thresholds,
+    uint64_t num_results, uint64_t max_counts,
+    const std::vector<uint64_t>& sum_doc_counts)
 {
     if (index_files.size() == 1)
     {
@@ -123,8 +123,8 @@ void counts_to_result(
         tlx::simple_vector<std::pair<Score, uint32_t> > sorted_indices(
             sum_doc_counts.back());
 
-        size_t count_threshold = 0;
-        for (size_t j = 0; j < index_file->file_names().size(); ++j) {
+        uint64_t count_threshold = 0;
+        for (uint64_t j = 0; j < index_file->file_names().size(); ++j) {
             if (scores[j] >= thresholds[0]) {
                 sorted_indices[count_threshold++] =
                     std::make_pair(scores[j], j);
@@ -146,9 +146,9 @@ void counts_to_result(
 
         result.resize(num_results);
 
-        for (size_t i = 0; i < num_results; ++i)
+        for (uint64_t i = 0; i < num_results; ++i)
         {
-            size_t document_id = sorted_indices[i].second;
+            uint64_t document_id = sorted_indices[i].second;
 
             result[i] = SearchResult(
                 index_file->file_names()[document_id].c_str(),
@@ -162,10 +162,10 @@ void counts_to_result(
             std::pair<Score, std::pair<uint16_t, uint32_t> >
             > sorted_indices(sum_doc_counts.back());
 
-        size_t count_threshold = 0;
-        for (size_t k = 0; k < index_files.size(); ++k) {
-            for (size_t i = 0; i < index_files[k]->file_names().size(); ++i) {
-                size_t index = sum_doc_counts[k] + i;
+        uint64_t count_threshold = 0;
+        for (uint64_t k = 0; k < index_files.size(); ++k) {
+            for (uint64_t i = 0; i < index_files[k]->file_names().size(); ++i) {
+                uint64_t index = sum_doc_counts[k] + i;
 
                 if (scores[index] >= thresholds[k]) {
                     sorted_indices[count_threshold++] =
@@ -189,10 +189,10 @@ void counts_to_result(
 
         result.resize(num_results);
 
-        for (size_t i = 0; i < num_results; ++i)
+        for (uint64_t i = 0; i < num_results; ++i)
         {
-            size_t index_id = sorted_indices[i].second.first;
-            size_t document_id = sorted_indices[i].second.second;
+            uint64_t index_id = sorted_indices[i].second.first;
+            uint64_t document_id = sorted_indices[i].second.second;
 
             result[i] = SearchResult(
                 index_files[index_id]->file_names()[document_id].c_str(),
@@ -212,13 +212,13 @@ bool classic_search_disable_sse2 = false;
 
 static inline
 void compute_counts_u8_64(
-    uint64_t num_hashes, size_t hashes_size, uint8_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size);
+    uint64_t num_hashes, uint64_t hashes_size, uint8_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size);
 
 static inline
 void compute_counts(
-    uint64_t num_hashes, size_t hashes_size, uint8_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint8_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
     return compute_counts_u8_64(
         num_hashes, hashes_size, scores, rows, size, buffer_size);
@@ -226,18 +226,18 @@ void compute_counts(
 
 static inline
 void compute_counts_u16_64(
-    uint64_t num_hashes, size_t hashes_size, uint16_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size);
+    uint64_t num_hashes, uint64_t hashes_size, uint16_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size);
 
 static inline
 void compute_counts_u16_128(
-    uint64_t num_hashes, size_t hashes_size, uint16_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size);
+    uint64_t num_hashes, uint64_t hashes_size, uint16_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size);
 
 static inline
 void compute_counts(
-    uint64_t num_hashes, size_t hashes_size, uint16_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint16_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
 #if __SSE2__
     if (!classic_search_disable_sse2) {
@@ -251,18 +251,18 @@ void compute_counts(
 
 static inline
 void compute_counts_u32_64(
-    uint64_t num_hashes, size_t hashes_size, uint32_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size);
+    uint64_t num_hashes, uint64_t hashes_size, uint32_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size);
 
 static inline
 void compute_counts_u32_128(
-    uint64_t num_hashes, size_t hashes_size, uint32_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size);
+    uint64_t num_hashes, uint64_t hashes_size, uint32_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size);
 
 static inline
 void compute_counts(
-    uint64_t num_hashes, size_t hashes_size, uint32_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint32_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
 #if __SSE2__
     if (!classic_search_disable_sse2) {
@@ -278,18 +278,18 @@ void compute_counts(
 
 static inline
 void aggregate_rows(
-    uint64_t num_hashes, size_t hashes_size, uint8_t* rows,
-    const size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint8_t* rows,
+    const uint64_t size, uint64_t buffer_size)
 {
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         uint8_t* rows_8 = rows + i * buffer_size;
         uint64_t* rows_64 = reinterpret_cast<uint64_t*>(rows_8);
-        for (size_t j = 1; j < num_hashes; ++j) {
+        for (uint64_t j = 1; j < num_hashes; ++j) {
             uint8_t* rows_8_j = rows_8 + j * buffer_size;
             uint64_t* rows_64_j = reinterpret_cast<uint64_t*>(rows_8_j);
 
             assert((i * buffer_size + j * buffer_size) % 8 == 0);
-            for (size_t k = 0; k < size / 8; ++k) {
+            for (uint64_t k = 0; k < size / 8; ++k) {
                 sLOG0 << i << hashes_size
                       << j << num_hashes << size
                       << reinterpret_cast<uint8_t*>(rows_64 + k) - rows
@@ -297,7 +297,7 @@ void aggregate_rows(
                       << size * hashes_size;
                 rows_64[k] &= rows_64_j[k];
             }
-            size_t k = (size / 8) * 8;
+            uint64_t k = (size / 8) * 8;
             while (k < size) {
                 rows_8[k] &= rows_8_j[k];
                 k++;
@@ -308,9 +308,9 @@ void aggregate_rows(
 
 template <typename Score>
 void search_index_file(
-    size_t file_num, const std::shared_ptr<IndexSearchFile>& index_file,
+    uint64_t file_num, const std::shared_ptr<IndexSearchFile>& index_file,
     const std::string& query, Score* score_list,
-    size_t& total_hashes, const std::vector<size_t>& sum_doc_counts,
+    uint64_t& total_hashes, const std::vector<uint64_t>& sum_doc_counts,
     Timer& timer)
 {
     static constexpr bool debug = false;
@@ -318,7 +318,7 @@ void search_index_file(
     uint32_t num_hashes = index_file->num_hashes();
     uint32_t term_size = index_file->term_size();
     uint64_t page_size = index_file->page_size();
-    size_t score_total_size = index_file->counts_size();
+    uint64_t score_total_size = index_file->counts_size();
 
     assert_exit(query.size() - term_size < std::numeric_limits<Score>::max(),
                 "query too long, can not be longer than "
@@ -335,10 +335,10 @@ void search_index_file(
     total_hashes += hashes.size();
     timer.stop();
 
-    size_t score_batch_size = 128;
+    uint64_t score_batch_size = 128;
     score_batch_size = std::max(score_batch_size, 8 * page_size);
     score_batch_size = std::min(score_batch_size, score_total_size);
-    size_t score_batch_num = tlx::div_ceil(score_total_size, score_batch_size);
+    uint64_t score_batch_num = tlx::div_ceil(score_total_size, score_batch_size);
     Score* score_start = score_list + sum_doc_counts[file_num];
 
     LOG << "ClassicSearch::search()"
@@ -354,12 +354,12 @@ void search_index_file(
 
     parallel_for(
         0, score_batch_num, gopt_threads,
-        [&](size_t b) {
+        [&](uint64_t b) {
             Timer thr_timer;
-            size_t score_begin = b * score_batch_size;
-            size_t score_end =
+            uint64_t score_begin = b * score_batch_size;
+            uint64_t score_end =
                 std::min((b + 1) * score_batch_size, score_total_size);
-            size_t score_size = score_end - score_begin;
+            uint64_t score_size = score_end - score_begin;
             LOG << "search()"
                 << " score_begin=" << score_begin
                 << " score_end=" << score_end
@@ -369,7 +369,7 @@ void search_index_file(
             die_unless(score_begin % 8 == 0);
             score_begin = tlx::div_ceil(score_begin, 8);
             score_size = tlx::div_ceil(score_size, 8);
-            size_t score_buffer_size = tlx::round_up(score_size, 8);
+            uint64_t score_buffer_size = tlx::round_up(score_size, 8);
 
             // rows array: interleaved as
             // [ hash0[doc0, doc1, ..., doc(score_size)], hash1[doc0, ...], ...]
@@ -403,22 +403,22 @@ void search_index_file(
 void ClassicSearch::search(
     const std::string& query,
     std::vector<SearchResult>& result,
-    double threshold, size_t num_results)
+    double threshold, uint64_t num_results)
 {
     static constexpr bool debug = false;
 
     if (index_files_.empty())
         return;
 
-    std::vector<size_t> sum_doc_counts(index_files_.size() + 1);
+    std::vector<uint64_t> sum_doc_counts(index_files_.size() + 1);
 
     uint32_t max_term_size = 0;
 
     // sum_doc_counts[i] - always rounded up to the next multiple of 8.  this
     // way we guarantee that the score array will always be 128 byte aligned
     sum_doc_counts[0] = 0;
-    for (size_t i = 1; i <= index_files_.size(); ++i) {
-        size_t counts_size = index_files_[i - 1]->counts_size();
+    for (uint64_t i = 1; i <= index_files_.size(); ++i) {
+        uint64_t counts_size = index_files_[i - 1]->counts_size();
         die_unless(counts_size % 8 == 0);
         sum_doc_counts[i] += sum_doc_counts[i - 1] + counts_size;
 
@@ -432,17 +432,17 @@ void ClassicSearch::search(
                 "query too short, needs to be at least "
                 + std::to_string(max_term_size) + " characters long");
 
-    const size_t total_documents = sum_doc_counts[index_files_.size()];
+    const uint64_t total_documents = sum_doc_counts[index_files_.size()];
 
     LOG << "ClassicSearch::search()"
         << " index_files_.size=" << index_files_.size()
         << " sum_doc_counts=" << sum_doc_counts
         << " total_documents=" << total_documents;
 
-    size_t total_hashes = 0;
+    uint64_t total_hashes = 0;
 
-    std::vector<size_t> thresholds(index_files_.size());
-    for (size_t i = 0; i < index_files_.size(); ++i) {
+    std::vector<uint64_t> thresholds(index_files_.size());
+    for (uint64_t i = 0; i < index_files_.size(); ++i) {
         thresholds[i] = std::ceil(
             threshold
             * (query.size() - index_files_[i]->term_size() + 1));
@@ -455,7 +455,7 @@ void ClassicSearch::search(
     {
         uint8_t* score_list = allocate_aligned<uint8_t>(total_documents, 16);
 
-        for (size_t file_num = 0; file_num < index_files_.size(); ++file_num)
+        for (uint64_t file_num = 0; file_num < index_files_.size(); ++file_num)
         {
             search_index_file(
                 file_num, index_files_[file_num],
@@ -471,7 +471,7 @@ void ClassicSearch::search(
     {
         uint16_t* score_list = allocate_aligned<uint16_t>(total_documents, 16);
 
-        for (size_t file_num = 0; file_num < index_files_.size(); ++file_num)
+        for (uint64_t file_num = 0; file_num < index_files_.size(); ++file_num)
         {
             search_index_file(
                 file_num, index_files_[file_num],
@@ -487,7 +487,7 @@ void ClassicSearch::search(
     {
         uint32_t* score_list = allocate_aligned<uint32_t>(total_documents, 16);
 
-        for (size_t file_num = 0; file_num < index_files_.size(); ++file_num)
+        for (uint64_t file_num = 0; file_num < index_files_.size(); ++file_num)
         {
             search_index_file(
                 file_num, index_files_[file_num],
@@ -642,13 +642,13 @@ static const uint64_t s_expansion_u8_64[256] = {
 
 static inline
 void compute_counts_u8_64(
-    uint64_t num_hashes, size_t hashes_size, uint8_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint8_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
     auto counts_64 = reinterpret_cast<uint64_t*>(scores);
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         const uint8_t* rows_8 = rows + i * buffer_size;
-        for (size_t k = 0; k < size; k++) {
+        for (uint64_t k = 0; k < size; k++) {
             counts_64[k] += s_expansion_u8_64[rows_8[k]];
         }
     }
@@ -665,13 +665,13 @@ static const uint64_t s_expansion_u16_64[16] = {
 
 static inline
 void compute_counts_u16_64(
-    uint64_t num_hashes, size_t hashes_size, uint16_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint16_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
     auto counts_64 = reinterpret_cast<uint64_t*>(scores);
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         const uint8_t* rows_8 = rows + i * buffer_size;
-        for (size_t k = 0; k < size; k++) {
+        for (uint64_t k = 0; k < size; k++) {
             counts_64[2 * k] += s_expansion_u16_64[rows_8[k] & 0xF];
             counts_64[2 * k + 1] += s_expansion_u16_64[rows_8[k] >> 4];
         }
@@ -941,15 +941,15 @@ alignas(16) static const uint16_t s_expansion_u16_128[256 * 8] = {
 
 static inline
 void compute_counts_u16_128(
-    uint64_t num_hashes, size_t hashes_size, uint16_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint16_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
 #if __SSE2__
     auto expansion_128 = reinterpret_cast<const __m128i_u*>(s_expansion_u16_128);
     auto counts_128 = reinterpret_cast<__m128i_u*>(scores);
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         const uint8_t* rows_8 = rows + i * buffer_size;
-        for (size_t k = 0; k < size; k++) {
+        for (uint64_t k = 0; k < size; k++) {
             counts_128[k] = _mm_adds_epu16(counts_128[k], expansion_128[rows_8[k]]);
         }
     }
@@ -965,13 +965,13 @@ static const uint64_t s_expansion_u32_64[4] = {
 
 static inline
 void compute_counts_u32_64(
-    uint64_t num_hashes, size_t hashes_size, uint32_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint32_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
     auto counts_64 = reinterpret_cast<uint64_t*>(scores);
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         const uint8_t* rows_8 = rows + i * buffer_size;
-        for (size_t k = 0; k < size; k++) {
+        for (uint64_t k = 0; k < size; k++) {
             counts_64[4 * k + 0] += s_expansion_u32_64[(rows_8[k] >> 0) & 0x3];
             counts_64[4 * k + 1] += s_expansion_u32_64[(rows_8[k] >> 2) & 0x3];
             counts_64[4 * k + 2] += s_expansion_u32_64[(rows_8[k] >> 4) & 0x3];
@@ -1003,15 +1003,15 @@ alignas(32) static const uint32_t s_expansion_u32_128[16 * 4] = {
 
 static inline
 void compute_counts_u32_128(
-    uint64_t num_hashes, size_t hashes_size, uint32_t* scores,
-    const uint8_t* rows, size_t size, size_t buffer_size)
+    uint64_t num_hashes, uint64_t hashes_size, uint32_t* scores,
+    const uint8_t* rows, uint64_t size, uint64_t buffer_size)
 {
 #if __SSE2__
     auto expansion_128 = reinterpret_cast<const __m128i_u*>(s_expansion_u32_128);
     auto counts_128 = reinterpret_cast<__m128i_u*>(scores);
     for (uint64_t i = 0; i < hashes_size; i += num_hashes) {
         const uint8_t* rows_8 = rows + i * buffer_size;
-        for (size_t k = 0; k < size; k++) {
+        for (uint64_t k = 0; k < size; k++) {
             counts_128[2 * k + 0] =
                 _mm_add_epi32(counts_128[2 * k + 0], expansion_128[rows_8[k] & 0xF]);
             counts_128[2 * k + 1] =

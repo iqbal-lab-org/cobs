@@ -26,8 +26,8 @@ private:
     std::vector<io_event> m_io_events;
 
 protected:
-    void read_from_disk(const std::vector<size_t>& hashes, uint8_t* rows,
-                        size_t begin, size_t size, size_t buffer_size) override;
+    void read_from_disk(const std::vector<uint64_t>& hashes, uint8_t* rows,
+                        uint64_t begin, uint64_t size, uint64_t buffer_size) override;
 
 public:
     explicit CompactIndexAioSearchFile(const fs::path& path);

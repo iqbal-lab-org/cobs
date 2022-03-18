@@ -20,8 +20,8 @@ private:
     uint8_t* data_;
 
 protected:
-    void read_from_disk(const std::vector<size_t>& hashes, uint8_t* rows,
-                        size_t begin, size_t size, size_t buffer_size) override;
+    void read_from_disk(const std::vector<uint64_t>& hashes, uint8_t* rows,
+                        uint64_t begin, uint64_t size, uint64_t buffer_size) override;
 
 public:
     explicit ClassicIndexMMapSearchFile(const fs::path& path);

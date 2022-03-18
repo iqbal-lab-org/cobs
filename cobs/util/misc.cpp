@@ -25,11 +25,11 @@ uint64_t get_memory_size() {
     return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
 }
 
-uint64_t get_memory_size(size_t percentage) {
+uint64_t get_memory_size(uint64_t percentage) {
     return get_memory_size() * percentage / 100;
 }
 
-std::string random_sequence(size_t size, size_t seed) {
+std::string random_sequence(uint64_t size, uint64_t seed) {
     std::default_random_engine rng(seed);
     return random_sequence_rng(size, rng);
 }

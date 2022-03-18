@@ -14,7 +14,7 @@
 namespace cobs {
 
 //! run COBS using parallel threads, default: all cores
-extern size_t gopt_threads;
+extern uint64_t gopt_threads;
 
 //! whether to load the complete index to RAM for queries.
 extern bool gopt_load_complete_index;

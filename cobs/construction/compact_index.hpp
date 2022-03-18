@@ -35,7 +35,7 @@ struct CompactIndexParameters {
     //! memory to use bytes to create index
     uint64_t mem_bytes = get_memory_size(80);
     //! number of threads to use
-    size_t num_threads = gopt_threads;
+    uint64_t num_threads = gopt_threads;
     //! clobber erase output directory if it exists, default: false
     bool clobber = false;
     //! continue in existing output directory, default: false

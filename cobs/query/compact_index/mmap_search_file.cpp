@@ -20,7 +20,7 @@ CompactIndexMMapSearchFile::CompactIndexMMapSearchFile(const fs::path& path)
     data_.resize(header_.parameters_.size());
     handle_ = initialize_mmap(path);
     data_[0] = handle_.data + stream_pos_.curr_pos;
-    for (size_t i = 1; i < header_.parameters_.size(); i++) {
+    for (uint64_t i = 1; i < header_.parameters_.size(); i++) {
         data_[i] =
             data_[i - 1]
             + header_.page_size_ * header_.parameters_[i - 1].signature_size;
@@ -32,15 +32,15 @@ CompactIndexMMapSearchFile::~CompactIndexMMapSearchFile() {
 }
 
 void CompactIndexMMapSearchFile::read_from_disk(
-    const std::vector<size_t>& hashes, uint8_t* rows,
-    size_t begin, size_t size, size_t buffer_size)
+    const std::vector<uint64_t>& hashes, uint8_t* rows,
+    uint64_t begin, uint64_t size, uint64_t buffer_size)
 {
-    size_t page_size = header_.page_size_;
+    uint64_t page_size = header_.page_size_;
 
     die_unless(begin + size <= row_size());
     die_unless(begin % page_size == 0);
-    size_t begin_page = begin / page_size;
-    size_t end_page = tlx::div_ceil(begin + size, page_size);
+    uint64_t begin_page = begin / page_size;
+    uint64_t end_page = tlx::div_ceil(begin + size, page_size);
     die_unless(end_page <= header_.parameters_.size());
 
     LOG0 << "mmap::read_from_disk()"
@@ -52,9 +52,9 @@ void CompactIndexMMapSearchFile::read_from_disk(
          << " begin_page=" << begin_page
          << " end_page=" << end_page;
 
-    for (size_t i = 0; i < hashes.size(); i++) {
-        size_t j = 0;
-        for (size_t p = begin_page; p < end_page; ++p, ++j) {
+    for (uint64_t i = 0; i < hashes.size(); i++) {
+        uint64_t j = 0;
+        for (uint64_t p = begin_page; p < end_page; ++p, ++j) {
             uint64_t hash = hashes[i] % header_.parameters_[p].signature_size;
             uint8_t* data_8 = data_[p] + hash * page_size;
             uint8_t* rows_8 =

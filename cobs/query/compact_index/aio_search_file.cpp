@@ -31,7 +31,7 @@ CompactIndexAioSearchFile::CompactIndexAioSearchFile(const fs::path& path)
 
     m_offsets.resize(header_.parameters_.size());
     m_offsets[0] = stream_pos_.curr_pos;
-    for (size_t i = 1; i < header_.parameters_.size(); i++) {
+    for (uint64_t i = 1; i < header_.parameters_.size(); i++) {
         m_offsets[i] = m_offsets[i - 1] + header_.page_size_ * header_.parameters_[i - 1].signature_size;
     }
 
@@ -40,7 +40,7 @@ CompactIndexAioSearchFile::CompactIndexAioSearchFile(const fs::path& path)
         exit_error_errno("io_setup error");
     }
 
-    for (size_t i = 0; i < m_iocbs.size(); i++) {
+    for (uint64_t i = 0; i < m_iocbs.size(); i++) {
         m_iocbs[i].aio_fildes = m_fd;
         m_iocbs[i].aio_lio_opcode = IOCB_CMD_PREAD;
         m_iocbs[i].aio_nbytes = header_.page_size_;
@@ -56,16 +56,16 @@ CompactIndexAioSearchFile::~CompactIndexAioSearchFile() {
 }
 
 void CompactIndexAioSearchFile::read_from_disk(
-    const std::vector<size_t>& hashes, uint8_t* rows,
-    size_t begin, size_t size, size_t buffer_size)
+    const std::vector<uint64_t>& hashes, uint8_t* rows,
+    uint64_t begin, uint64_t size, uint64_t buffer_size)
 {
     tlx::unused(begin, size, buffer_size);
 
     int64_t num_requests = header_.parameters_.size() * hashes.size();
 
 #pragma omp parallel for collapse(2)
-    for (size_t i = 0; i < header_.parameters_.size(); i++) {
-        for (size_t j = 0; j < hashes.size(); j++) {
+    for (uint64_t i = 0; i < header_.parameters_.size(); i++) {
+        for (uint64_t j = 0; j < hashes.size(); j++) {
             uint64_t index = i + j * header_.parameters_.size();
             uint64_t hash = hashes[j] % header_.parameters_[i].signature_size;
             // todo rows does not need to be reallocated each time

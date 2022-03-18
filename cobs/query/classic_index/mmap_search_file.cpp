@@ -25,11 +25,11 @@ ClassicIndexMMapSearchFile::~ClassicIndexMMapSearchFile() {
 }
 
 void ClassicIndexMMapSearchFile::read_from_disk(
-    const std::vector<size_t>& hashes, uint8_t* rows,
-    size_t begin, size_t size, size_t buffer_size)
+    const std::vector<uint64_t>& hashes, uint8_t* rows,
+    uint64_t begin, uint64_t size, uint64_t buffer_size)
 {
     die_unless(begin + size <= header_.row_size());
-    for (size_t i = 0; i < hashes.size(); i++) {
+    for (uint64_t i = 0; i < hashes.size(); i++) {
         auto data_8 =
             data_ + begin
             + (hashes[i] % header_.signature_size_) * header_.row_size();

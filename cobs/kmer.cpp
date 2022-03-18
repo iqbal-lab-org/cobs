@@ -100,8 +100,8 @@ const std::unordered_map<unsigned int, uint8_t> kmer_bps_to_uint8_t = {
 };
 
 /*
-    for (size_t i = 0; i < 256; ++i) {
-        size_t j =
+    for (uint64_t i = 0; i < 256; ++i) {
+        uint64_t j =
             ((3 - ((i >> 0) & 3)) << 6) |
             ((3 - ((i >> 2) & 3)) << 4) |
             ((3 - ((i >> 4) & 3)) << 2) |
