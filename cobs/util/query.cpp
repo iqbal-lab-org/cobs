@@ -69,7 +69,7 @@ MMapHandle initialize_mmap(const fs::path& path)
         uint64_t remain = size;
         uint64_t pos = 0;
         while (remain != 0) {
-            suint64_t rb = read(fd, data_ptr + pos, remain);
+            int64_t rb = read(fd, data_ptr + pos, remain);
             if (rb < 0) {
                 print_errno("read failed");
                 break;

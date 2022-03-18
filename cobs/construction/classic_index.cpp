@@ -142,7 +142,7 @@ void classic_construct_from_documents(
 
     uint64_t batch_size =
         params.mem_bytes / (params.signature_size / 8) / num_threads;
-    batch_size = std::max(8lu, tlx::round_up(batch_size, 8));
+    batch_size = std::max(8llu, tlx::round_up(batch_size, 8llu));
     num_threads = std::min(
         num_threads,
         params.mem_bytes / (batch_size / 8 * params.signature_size));

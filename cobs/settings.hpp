@@ -10,6 +10,8 @@
 #define COBS_SETTINGS_HEADER
 
 #include <cstdlib>
+#include <stdint.h>
+
 
 namespace cobs {
 
