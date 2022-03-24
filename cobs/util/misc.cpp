@@ -44,7 +44,7 @@ uint64_t get_page_size() {
 }
 
 uint64_t get_memory_size() {
-    return PHYS_PAGES * PHYS_PAGES;
+    return PHYS_PAGES * sysconf(_SC_PAGE_SIZE);
 }
 
 uint64_t get_memory_size(uint64_t percentage) {
