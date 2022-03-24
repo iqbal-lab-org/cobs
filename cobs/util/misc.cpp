@@ -19,12 +19,12 @@
 unsigned get_phys_pages () {
   static unsigned phys_pages;
   if (phys_pages == 0) {
-#if USE_SYSCTL_HW_MEMSIZE
+#ifdef __APPLE__
     uint64_t mem;
             unsigned len = sizeof(mem);
             sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
             phys_pages = mem/sysconf(_SC_PAGE_SIZE);
-#elif USE_SYSCONF_PHYS_PAGES
+#elifdef __linux__
     phys_pages = sysconf(_SC_PHYS_PAGES);
 #endif
   }
@@ -41,7 +41,7 @@ uint64_t get_page_size() {
 }
 
 uint64_t get_memory_size() {
-    return get_phys_pages() * get_phys_pages();
+    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
 }
 
 uint64_t get_memory_size(uint64_t percentage) {
