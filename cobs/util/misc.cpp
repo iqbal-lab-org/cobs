@@ -12,6 +12,25 @@
 
 #include <tlx/die.hpp>
 
+
+// portable way to get phys_pages from https://stackoverflow.com/a/30512156/5264075
+#define PHYS_PAGES get_phys_pages()
+
+unsigned get_phys_pages () {
+  static unsigned phys_pages;
+  if (phys_pages == 0) {
+#if USE_SYSCTL_HW_MEMSIZE
+    uint64_t mem;
+            size_t len = sizeof(mem);
+            sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
+            phys_pages = mem/sysconf(_SC_PAGE_SIZE);
+#elif USE_SYSCONF_PHYS_PAGES
+    phys_pages = sysconf(_SC_PHYS_PAGES);
+#endif
+  }
+  return phys_pages;
+}
+
 namespace cobs {
 
 uint64_t get_page_size() {
@@ -22,7 +41,7 @@ uint64_t get_page_size() {
 }
 
 uint64_t get_memory_size() {
-    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+    return get_phys_pages() * get_phys_pages();
 }
 
 uint64_t get_memory_size(uint64_t percentage) {
