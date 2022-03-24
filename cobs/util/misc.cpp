@@ -9,6 +9,8 @@
 #include <cobs/util/misc.hpp>
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
 
 #include <tlx/die.hpp>
 
@@ -42,7 +44,7 @@ uint64_t get_page_size() {
 }
 
 uint64_t get_memory_size() {
-    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+    return PHYS_PAGES * PHYS_PAGES;
 }
 
 uint64_t get_memory_size(uint64_t percentage) {
