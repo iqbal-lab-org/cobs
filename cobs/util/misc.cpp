@@ -24,7 +24,8 @@ unsigned get_phys_pages () {
             unsigned len = sizeof(mem);
             sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
             phys_pages = mem/sysconf(_SC_PAGE_SIZE);
-#elifdef __linux__
+#endif
+#ifdef __linux__
     phys_pages = sysconf(_SC_PHYS_PAGES);
 #endif
   }
