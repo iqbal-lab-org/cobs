@@ -12,7 +12,7 @@
 
 namespace cobs {
 
-uint64_t gopt_threads = std::thread::hardware_concurrency();
+unsigned gopt_threads = std::thread::hardware_concurrency();
 
 bool gopt_load_complete_index = false;
 

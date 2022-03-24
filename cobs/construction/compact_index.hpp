@@ -31,11 +31,11 @@ struct CompactIndexParameters {
     //! false positive rate, provided by user
     double false_positive_rate = 0.3;
     //! page or block size of filters with common fpr
-    uint64_t page_size = 0;
+    unsigned page_size = 0;
     //! memory to use bytes to create index
     uint64_t mem_bytes = get_memory_size(80);
     //! number of threads to use
-    uint64_t num_threads = gopt_threads;
+    unsigned num_threads = gopt_threads;
     //! clobber erase output directory if it exists, default: false
     bool clobber = false;
     //! continue in existing output directory, default: false

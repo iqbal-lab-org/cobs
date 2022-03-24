@@ -21,7 +21,7 @@ unsigned get_phys_pages () {
   if (phys_pages == 0) {
 #if USE_SYSCTL_HW_MEMSIZE
     uint64_t mem;
-            size_t len = sizeof(mem);
+            unsigned len = sizeof(mem);
             sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
             phys_pages = mem/sysconf(_SC_PAGE_SIZE);
 #elif USE_SYSCONF_PHYS_PAGES

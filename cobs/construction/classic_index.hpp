@@ -41,7 +41,7 @@ struct ClassicIndexParameters {
     //! memory to use bytes to create index
     uint64_t mem_bytes = get_memory_size(80);
     //! number of threads to use
-    uint64_t num_threads = gopt_threads;
+    unsigned num_threads = gopt_threads;
     //! log prefix (used by compact index construction)
     std::string log_prefix;
     //! clobber erase output directory if it exists, default: false
