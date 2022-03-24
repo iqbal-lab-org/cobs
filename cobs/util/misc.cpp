@@ -23,9 +23,9 @@ unsigned get_phys_pages () {
   if (phys_pages == 0) {
 #ifdef __APPLE__
     uint64_t mem;
-            unsigned len = sizeof(mem);
-            sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
-            phys_pages = mem/sysconf(_SC_PAGE_SIZE);
+    size_t len = sizeof(mem);
+    sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
+    phys_pages = mem/sysconf(_SC_PAGE_SIZE);
 #endif
 #ifdef __linux__
     phys_pages = sysconf(_SC_PHYS_PAGES);
