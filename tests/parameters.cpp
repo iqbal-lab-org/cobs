@@ -97,11 +97,11 @@ TEST(parameters, false_positive_hash) {
     num_positives = get_num_positives_hash(3, 0.3, 100000);
     assert_between(num_positives, 29000, 31000);
     num_positives = get_num_positives_hash(1, 0.1, 100000);
-    assert_between(num_positives, 9700, 10200);
+    assert_between(num_positives, 9800, 10200);
     num_positives = get_num_positives_hash(2, 0.1, 100000);
-    assert_between(num_positives, 9700, 10200);
+    assert_between(num_positives, 9800, 10200);
     num_positives = get_num_positives_hash(3, 0.1, 100000);
-    assert_between(num_positives, 9700, 10200);
+    assert_between(num_positives, 9800, 10200);
 }
 
 TEST(parameters, canonical) {
