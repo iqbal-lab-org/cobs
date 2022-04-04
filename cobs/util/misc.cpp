@@ -23,7 +23,7 @@ unsigned get_phys_pages () {
   if (phys_pages == 0) {
 #ifdef __APPLE__
     uint64_t mem;
-    size_t len = sizeof(mem);
+    uint64_t len = sizeof(mem);
     sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
     phys_pages = mem/sysconf(_SC_PAGE_SIZE);
 #endif

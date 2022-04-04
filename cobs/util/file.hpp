@@ -69,7 +69,7 @@ bool file_has_header(const fs::path& p) {
 static inline
 std::string base_name(const fs::path& p) {
     std::string result = p.filename().string();
-    std::string::size_type pos = result.find('.');
+    auto pos = result.find('.');
     if (pos == std::string::npos)
         return result;
     return result.substr(0, pos);
