@@ -214,7 +214,7 @@ basic_zip_streambuf<CharT, Traits>::get_in_size() const {
 }
 
 template <typename CharT, typename Traits>
-unsigned long
+uint64_t
 basic_zip_streambuf<CharT, Traits>::get_out_size() const {
     return zip_stream_.total_out;
 }
@@ -349,7 +349,7 @@ basic_unzip_streambuf<CharT, Traits>::get_crc() const {
 }
 
 template <typename CharT, typename Traits>
-unsigned long
+uint64_t
 basic_unzip_streambuf<CharT, Traits>::get_out_size() const {
     return zip_stream_.total_out;
 }

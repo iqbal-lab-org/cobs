@@ -196,7 +196,7 @@ void classic_combine_streams(
     std::vector<std::ifstream>& streams,
     std::vector<uint64_t>& row_bits,
     const fs::path& out_file,
-    unsigned term_size, uint8_t canonicalize, uint64_t signature_size,
+    uint64_t term_size, uint8_t canonicalize, uint64_t signature_size,
     uint64_t new_row_bits, uint64_t num_hash, uint64_t mem_bytes,
     Timer& t, const std::vector<std::string>& file_names)
 {
@@ -447,7 +447,7 @@ bool classic_combine(const fs::path& in_dir, const fs::path& out_dir,
             std::vector<std::ifstream> streams;
             std::vector<uint64_t> row_bits;
             std::vector<std::string> file_names;
-            unsigned term_size = 0;
+            uint64_t term_size = 0;
             uint8_t canonicalize = false;
             uint64_t signature_size = 0;
             uint64_t num_hashes = 0;
@@ -669,7 +669,7 @@ void classic_construct_random(const fs::path& out_file,
         file_names.push_back("file_" + pad_index(i));
     }
 
-    unsigned term_size = 31;
+    uint64_t term_size = 31;
     uint8_t canonicalize = 1;
 
     ClassicIndexHeader cih;

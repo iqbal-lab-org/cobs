@@ -21,7 +21,7 @@
 
 namespace cobs {
 
-template <unsigned int N>
+template <uint64_t N>
 class KMerBuffer
 {
 private:
@@ -79,7 +79,7 @@ public:
     }
 };
 
-template <unsigned int N>
+template <uint64_t N>
 void KMerBuffer<N>::print(std::ostream& ostream) const {
     for (uint64_t i = 0; i < m_data.size(); i++) {
         ostream << m_data[i] << std::endl;

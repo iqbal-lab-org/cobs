@@ -10,7 +10,7 @@
 
 namespace cobs {
 
-const std::unordered_map<unsigned int, uint8_t> kmer_bps_to_uint8_t = {
+const std::unordered_map<uint64_t, uint8_t> kmer_bps_to_uint8_t = {
     { 1094795585, 0 }, { 1128350017, 1 }, { 1195458881, 2 },
     { 1413562689, 3 }, { 1094926657, 4 }, { 1128481089, 5 },
     { 1195589953, 6 }, { 1413693761, 7 }, { 1095188801, 8 },

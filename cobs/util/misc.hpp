@@ -55,8 +55,8 @@ void deallocate_aligned(void* ptr) {
 }
 
 static inline
-std::string pad_index(unsigned index, int size = 6) {
-    return tlx::ssprintf("%0*u", size, index);
+std::string pad_index(uint64_t index, int size = 6) {
+    return tlx::ssprintf("%0*lu", size, index);
 }
 
 /*!
@@ -65,7 +65,7 @@ std::string pad_index(unsigned index, int size = 6) {
 template <typename Callback>
 void process_hashes(const void* input, uint64_t size, uint64_t signature_size,
                     uint64_t num_hashes, Callback callback) {
-    for (unsigned int i = 0; i < num_hashes; i++) {
+    for (uint64_t i = 0; i < num_hashes; i++) {
         uint64_t hash = XXH64(input, size, i);
         callback(hash % signature_size);
     }

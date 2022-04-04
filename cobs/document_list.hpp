@@ -112,7 +112,7 @@ struct DocumentEntry {
 
     //! process terms
     template <typename Callback>
-    void process_terms(unsigned term_size, Callback callback) const {
+    void process_terms(uint64_t term_size, Callback callback) const {
         if (type_ == FileType::Text) {
             TextFile text(path_);
             text.process_terms(term_size, callback);

@@ -59,7 +59,7 @@ void compact_combine_into_compact(
                  });
     std::sort(paths.begin(), paths.end());
 
-    unsigned term_size = 0;
+    uint64_t term_size = 0;
     uint8_t canonicalize = 0;
     std::vector<CompactIndexHeader::parameter> parameters;
     std::vector<std::string> file_names;

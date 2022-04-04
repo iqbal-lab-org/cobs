@@ -29,10 +29,10 @@ uint32_t chars_to_int(char c1, char c2, char c3, char c4) {
 }
 
 extern const char* kmer_byte_to_base_pairs[256];
-extern const std::unordered_map<unsigned int, uint8_t> kmer_bps_to_uint8_t;
+extern const std::unordered_map<uint64_t, uint8_t> kmer_bps_to_uint8_t;
 extern uint8_t kmer_mirror_pairs[256];
 
-template <unsigned int N>
+template <uint64_t N>
 class KMer : public std::array<uint8_t, (N + 3) / 4>
 {
 public:

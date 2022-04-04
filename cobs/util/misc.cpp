@@ -18,8 +18,8 @@
 // portable way to get phys_pages from https://stackoverflow.com/a/30512156/5264075
 #define PHYS_PAGES get_phys_pages()
 
-unsigned get_phys_pages () {
-  static unsigned phys_pages;
+uint64_t get_phys_pages () {
+  static uint64_t phys_pages;
   if (phys_pages == 0) {
 #ifdef __APPLE__
     uint64_t mem;

@@ -145,7 +145,7 @@ public:
     uint32_t get_in_size() const;
 
     //! returns the size (bytes) of the compressed data so far.
-    unsigned long get_out_size() const;
+    uint64_t get_out_size() const;
 
 private:
     bool zip_to_stream(char* buffer, std::streamsize buffer_size);
@@ -206,7 +206,7 @@ public:
     uint32_t get_crc() const;
 
     //! returns the number of uncompressed bytes
-    unsigned long get_out_size() const;
+    uint64_t get_out_size() const;
 
     //! returns the number of read compressed bytes
     uint32_t get_in_size() const;
