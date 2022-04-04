@@ -9,3 +9,9 @@ python/docs/_generated
 *.cobs_classic
 *.cobs_compact
 __pycache__
+scripts/tests/test_create_transposed_bf_matrix.out
+.snakemake
+/scripts/xz_compressor/logs/
+/scripts/xz_compressor/out/
+/scripts/filter_ordering_to_high_quality_genomes/out/
+/scripts/filter_ordering_to_high_quality_genomes/_batch_lists/
