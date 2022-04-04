@@ -106,7 +106,7 @@ class basic_zip_streambuf : public std::basic_streambuf<CharT, Traits>
 {
 public:
     typedef std::basic_ostream<CharT, Traits>& ostream_reference;
-    typedef unsigned char byte_type;
+    typedef uint8_t byte_type;
     typedef std::vector<byte_type> byte_vector_type;
     typedef std::vector<CharT> char_vector_type;
     typedef typename std::basic_streambuf<CharT, Traits>::int_type int_type;

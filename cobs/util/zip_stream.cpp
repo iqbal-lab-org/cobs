@@ -298,7 +298,7 @@ template <typename CharT, typename Traits>
 typename basic_unzip_streambuf<CharT, Traits>::int_type
 basic_unzip_streambuf<CharT, Traits>::underflow() {
     if (this->gptr() && (this->gptr() < this->egptr()))
-        return *reinterpret_cast<unsigned char*>(this->gptr());
+        return *reinterpret_cast<uint8_t *>(this->gptr());
 
     int n_putback = static_cast<int>(this->gptr() - this->eback());
     if (n_putback > 4)
@@ -321,7 +321,7 @@ basic_unzip_streambuf<CharT, Traits>::underflow() {
                buffer_.data() + 4 + num);        // end of buffer
 
     // return next character
-    return *reinterpret_cast<unsigned char*>(this->gptr());
+    return *reinterpret_cast<uint8_t*>(this->gptr());
 }
 
 template <typename CharT, typename Traits>
