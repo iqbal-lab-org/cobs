@@ -42,7 +42,7 @@ std::string random_sequence(uint64_t size, uint64_t seed);
 template <typename T>
 T * allocate_aligned(uint64_t size, uint64_t alignment) {
     T* ptr;
-    int r = posix_memalign(reinterpret_cast<void**>(&ptr), alignment, sizeof(T) * size);
+    int64_t r = posix_memalign(reinterpret_cast<void**>(&ptr), alignment, sizeof(T) * size);
     if (r != 0)
         throw std::runtime_error("Out of memory");
     std::fill(ptr, ptr + size, 0);

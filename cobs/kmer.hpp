@@ -52,7 +52,7 @@ public:
     }
 
     void init(const char* chars) {
-        for (int i = N - 4; i >= -3; i -= 4) {
+        for (int64_t i = N - 4; i >= -3; i -= 4) {
             if (i >= 0) {
                 data()[(N - (i + 4)) / 4] =
                     kmer_bps_to_uint8_t.at(*((uint32_t*)(chars + i)));
@@ -102,8 +102,8 @@ public:
     }
 
     static void init(const char* chars, char* kmer_data, uint32_t kmer_size) {
-        int kmer_size_int = kmer_size;
-        for (int i = kmer_size_int - 4; i >= -3; i -= 4) {
+        int64_t kmer_size_int = kmer_size;
+        for (int64_t i = kmer_size_int - 4; i >= -3; i -= 4) {
             if (i >= 0) {
                 kmer_data[(kmer_size_int - (i + 4)) / 4] =
                     kmer_bps_to_uint8_t.at(*((uint32_t*)(chars + i)));
