@@ -67,9 +67,10 @@ MMapHandle initialize_mmap(const fs::path& path)
 #endif
         lseek(fd, 0, SEEK_SET);
         uint64_t remain = size;
+        const uint64_t one_gb = 1024*1024*1024;
         uint64_t pos = 0;
         while (remain != 0) {
-            int64_t rb = read(fd, data_ptr + pos, remain);
+            int64_t rb = read(fd, data_ptr + pos, std::min(one_gb, remain));
             if (rb < 0) {
                 print_errno("read failed");
                 break;
