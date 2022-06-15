@@ -4,8 +4,7 @@ reordered_assemblies_dir = "661k_compressed_high_quality/reordered_assemblies"
 kmer_size = 1000
 nb_positive_queries = 2000
 nb_negative_queries = 2000
-# batches = ["neisseria_gonorrhoeae__01", "dustbin__01", "chlamydia_pecorum__01"]
-batches = ["chlamydia_pecorum__01"]
+batches = ["neisseria_gonorrhoeae__01", "dustbin__01", "chlamydia_pecorum__01"]
 
 print("set -eux")
 for batch in batches:
