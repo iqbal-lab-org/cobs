@@ -52,6 +52,15 @@ make -j4
 ```
 and optionally run `make test` to check the build.
 
+### OS X compilation
+
+If the above does not work and you are using `OS X`, install `gcc` and `g++` and try switching the `cmake` command to:
+```
+cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++11 ..
+```
+
+On `OS X`, `COBS` was tested with `cmake v3.22.3`, `make v3.81`, `gcc/g++-11 v11.2.0`.
+
 ## Building an Index
 
 COBS can read FASTA files (`*.fa`, `*.fasta`, `*.fna`, `*.ffn`, `*.faa`, `*.frn`, `*.fa.gz`, `*.fasta.gz`, `*.fna.gz`, `*.ffn.gz`, `*.faa.gz`, `*.frn.gz`), FASTQ files (`*.fq`, `*.fastq`, `*.fq.gz.`, `*.fastq.gz`), "Multi-FASTA" and "Multi-FASTQ" files (`*.mfasta`, `*.mfastq`), McCortex files (`*.ctx`), or text files (`*.txt`). 
