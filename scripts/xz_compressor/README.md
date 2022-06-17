@@ -16,12 +16,12 @@ Creates and compresses ordered [COBS](https://github.com/bingmann/cobs) indexes 
 ## Input
 
 Just configure the four entries in [config.yaml](config.yaml):
-* ordering_dir: a directory containing batches (text files) of ordered samples (one per line),
+* `ordering_dir`: a directory containing batches (text files) of ordered samples (one per line),
 see [sample_data/ordering](sample_data/ordering) for one example;
-* assemblies_dir: a directory containing assemblies. This directory can be subdivided in batches.
+* `assemblies_dir`: a directory containing assemblies. This directory can be subdivided in batches.
 See [sample_data/assemblies](sample_data/assemblies) for one example;
-* output_dir: the output dir;
-* cobs_container: the `COBS` container to use, can be used to specify a version of `COBS`.
+* `output_dir`: the output dir;
+* `cobs_container`: the `COBS` container to use, can be used to specify a version of `COBS`.
 
 ## Running
 
