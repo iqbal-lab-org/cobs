@@ -1,4 +1,0 @@
-ordering_dir: sample_data/ordering
-assemblies_dir: sample_data/assemblies
-output_dir: sample_data/out
-cobs_container: docker://leandroishilima/cobs:1915fc
