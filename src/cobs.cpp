@@ -16,7 +16,7 @@
 #include <cobs/settings.hpp>
 #include <cobs/util/calc_signature_size.hpp>
 #ifdef __linux__
-#include <cobs/query/compact_index/aio_search_file.hpp>
+  #include <cobs/query/compact_index/aio_search_file.hpp>
 #endif
 
 #include <tlx/cmdline_parser.hpp>
