@@ -1,7 +1,6 @@
 from pathlib import Path
 from glob import glob
 import json
-import logging
 import random
 import string
 import os
@@ -11,21 +10,24 @@ configfile: "config.yaml"
 # ======================================================
 # Helper functions
 # ======================================================
+def find_all_files_recursively(dir, pattern):
+    return (Path(file) for file in glob(f"{dir}/**/{pattern}", recursive=True))
+
 def get_all_ordering_files(ordering_dir):
-    return [Path(file) for file in glob(f"{ordering_dir}/**/*.txt", recursive=True)]
+    return find_all_files_recursively(ordering_dir, "*.txt")
 
 def get_order_name_to_order_path(all_ordering_files):
     return {
-        ordering_file.with_suffix("").name: Path(ordering_file).absolute()
+        ordering_file.with_suffix("").name: Path(ordering_file).resolve()
         for ordering_file in all_ordering_files
     }
 
 def get_all_assemblies_files(assemblies_dir):
-    return glob(f"{assemblies_dir}/**/*.contigs.fa.gz", recursive=True)
+    return find_all_files_recursively(assemblies_dir, "*.contigs.fa.gz")
 
 def get_sample_name_to_assembly_path(all_assemblies_files):
     return {
-        Path(assembly_file).name.replace(".contigs.fa.gz", ""): str(Path(assembly_file).absolute())
+        assembly_file.name.replace(".contigs.fa.gz", ""): str(assembly_file.resolve())
         for assembly_file in all_assemblies_files
     }
 
@@ -73,7 +75,6 @@ rule build_sample_name_to_assembly_path:
 
 
 def reorder_genomes(sample_name_to_assembly_path, order, output_dir):
-    logging.info(f"Creating {output_dir}")
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
     random_names = get_n_random_sorted_names(len(order))
@@ -81,7 +82,6 @@ def reorder_genomes(sample_name_to_assembly_path, order, output_dir):
         source = Path(sample_name_to_assembly_path[sample_name])
         source_suffixes = "".join(source.suffixes)
         dest = output_dir.resolve() / f"{random_name}_{sample_name}{source_suffixes}"
-        logging.info(f"{source} -> {dest}")
         os.symlink(str(source), str(dest))
 
 rule reorder_genomes:
