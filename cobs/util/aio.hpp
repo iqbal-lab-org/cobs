@@ -9,7 +9,9 @@
 #ifndef COBS_UTIL_AIO_HEADER
 #define COBS_UTIL_AIO_HEADER
 
-#include <linux/aio_abi.h>
+#ifdef __linux__
+    #include <linux/aio_abi.h>
+#endif
 #include <time.h>
 
 namespace cobs {
