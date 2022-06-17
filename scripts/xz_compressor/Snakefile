@@ -13,31 +13,31 @@ configfile: "config.yaml"
 # ======================================================
 def get_all_ordering_files(ordering_dir):
     return [Path(file) for file in glob(f"{ordering_dir}/**/*.txt", recursive=True)]
+
 def get_order_name_to_order_path(all_ordering_files):
     return {
         ordering_file.with_suffix("").name: Path(ordering_file).absolute()
         for ordering_file in all_ordering_files
     }
 
-
 def get_all_assemblies_files(assemblies_dir):
     return glob(f"{assemblies_dir}/**/*.contigs.fa.gz", recursive=True)
+
 def get_sample_name_to_assembly_path(all_assemblies_files):
     return {
         Path(assembly_file).name.replace(".contigs.fa.gz", ""): str(Path(assembly_file).absolute())
         for assembly_file in all_assemblies_files
     }
 
-
 def get_order(filepath):
     with open(filepath) as order_fh:
         order = [line.strip() for line in order_fh.readlines()]
     return order
 
-
 def get_random_name(length=40):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for _ in range(length))
+
 def get_n_random_sorted_names(n):
     random_names = set()
     while len(random_names) < n:
