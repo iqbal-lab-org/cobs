@@ -8,6 +8,9 @@
 
 #include "test_util.hpp"
 #include <gtest/gtest.h>
+#ifdef __linux__
+#include <cobs/query/compact_index/aio_search_file.hpp>
+#endif
 
 namespace fs = cobs::fs;
 
