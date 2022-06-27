@@ -15,12 +15,16 @@ for batch in batches:
     print(
         f"{cobs} classic-construct -T 1 {out_dir}/reordered_assemblies/{batch} {out_dir}/COBS_out/{batch}.cobs_classic")
     for query_length in query_lengths:
+        batch_query_file = f"{out_dir}/{batch}_queries.query_length_{query_length}.fa"
         print(
             f"{cobs} generate-queries -T 1 -n {nb_negative_queries_per_query_length} "
             f"-p {nb_positive_queries_per_query_length} -k {query_length} "
-            f"-o {out_dir}/{batch}_queries.query_length_{query_length}.fa {out_dir}/reordered_assemblies/{batch}")
-    print(f"sed -i 's/N/A/g' {out_dir}/{batch}_queries.fa")
-    print(
-        f"{cobs} query -i {out_dir}/COBS_out/{batch}.cobs_classic -f {out_dir}/{batch}_queries.fa --load-complete -T 1 > {out_dir}/{batch}.query_results.load_complete.txt")
-    print(
-        f"{cobs} query -i {out_dir}/COBS_out/{batch}.cobs_classic -f {out_dir}/{batch}_queries.fa -T 1 > {out_dir}/{batch}.query_results.no_load_complete.txt")
+            f"-o {batch_query_file} {out_dir}/reordered_assemblies/{batch}")
+        print(f"sed -i 's/N/A/g' {batch_query_file}")
+        print(
+            f"{cobs} query -i {out_dir}/COBS_out/{batch}.cobs_classic -f {batch_query_file} --load-complete -T 1 > "
+            f"{out_dir}/{batch}.query_results.query_length_{query_length}.load_complete.txt")
+        print(
+            f"{cobs} query -i {out_dir}/COBS_out/{batch}.cobs_classic -f {batch_query_file} -T 1 > "
+            f"{out_dir}/{batch}.query_results.query_length_{query_length}.no_load_complete.txt")
+
