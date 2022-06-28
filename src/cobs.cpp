@@ -13,6 +13,7 @@
 #include <cobs/query/classic_index/mmap_search_file.hpp>
 #include <cobs/query/classic_search.hpp>
 #include <cobs/query/compact_index/mmap_search_file.hpp>
+#include <cobs/query/search.hpp>
 #include <cobs/settings.hpp>
 #include <cobs/util/calc_signature_size.hpp>
 #ifdef __linux__
@@ -406,68 +407,6 @@ int compact_construct_combine(int argc, char** argv) {
 }
 
 /******************************************************************************/
-
-static inline
-void process_query(
-    cobs::Search& s, double threshold, unsigned num_results,
-    const std::string& query_line, const std::string& query_file)
-{
-    std::vector<cobs::SearchResult> result;
-
-    if (!query_line.empty()) {
-        s.search(query_line, result, threshold, num_results);
-
-        for (const auto& res : result) {
-            std::cout << res.doc_name << '\t' << res.score << '\n';
-        }
-    }
-    else if (!query_file.empty()) {
-        std::ifstream qf(query_file);
-        std::string line, query, comment;
-
-        while (std::getline(qf, line)) {
-            if (line.empty())
-                continue;
-
-            if (line[0] == '>' || line[0] == ';') {
-                if (!query.empty()) {
-                    // perform query
-                    s.search(query, result, threshold, num_results);
-                    std::cout << comment << '\t' << result.size() << '\n';
-
-                    for (const auto& res : result) {
-                        std::cout << res.doc_name << '\t' << res.score << '\n';
-                    }
-                }
-
-                // clear and copy query comment
-                line[0] = '*';
-                query.clear();
-                comment = line;
-                continue;
-            }
-            else {
-                query += line;
-            }
-        }
-
-        if (!query.empty()) {
-            // perform query
-            s.search(query, result, threshold, num_results);
-            std::cout << comment << '\t' << result.size() << '\n';
-
-            for (const auto& res : result) {
-                std::cout << res.doc_name << '\t' << res.score << '\n';
-            }
-        }
-    }
-    else {
-        die("Pass a verbatim query or a query file.");
-    }
-
-    s.timer().print("search");
-}
-
 int query(int argc, char** argv) {
     tlx::CmdlineParser cp;
 
@@ -504,24 +443,10 @@ int query(int argc, char** argv) {
     if (!cp.sort().process(argc, argv))
         return -1;
 
-    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices;
 
-    for (auto& path : index_files)
-    {
-        if (cobs::file_has_header<cobs::ClassicIndexHeader>(path)) {
-            indices.push_back(
-                std::make_shared<cobs::ClassicIndexMMapSearchFile>(path));
-        }
-        else if (cobs::file_has_header<cobs::CompactIndexHeader>(path)) {
-            indices.push_back(
-                std::make_shared<cobs::CompactIndexMMapSearchFile>(path));
-        }
-        else
-            die("Could not open index path \"" << path << "\"");
-    }
-
+    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_files);
     cobs::ClassicSearch s(indices);
-    process_query(s, threshold, num_results, query, query_file);
+    cobs::process_query(s, threshold, num_results, query, query_file);
 
     return 0;
 }
