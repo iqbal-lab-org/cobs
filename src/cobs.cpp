@@ -434,7 +434,7 @@ int classic_combine(int argc, char** argv) {
             "memory in bytes to use, default: " +
             tlx::format_iec_units(index_params.mem_bytes));
 
-    cp.add_size_t(
+    cp.add_unsigned(
             'T', "threads", index_params.num_threads,
             "number of threads to use, default: max cores");
 
@@ -449,7 +449,7 @@ int classic_combine(int argc, char** argv) {
 
     cobs::fs::path tmp_path(out_dir);
     cobs::fs::path f;
-    size_t i = 1;
+    uint64_t i = 1;
 
     cobs::fs::copy(in_dir, tmp_path / cobs::pad_index(i));
 
