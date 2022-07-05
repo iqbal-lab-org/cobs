@@ -4,8 +4,8 @@ given that the unit tests are not comprehensive enough. Subsampling the datasets
 integration tests, but these batches are way too heavy for integration tests as they are.
 
 * `create_command_lines_run_on_cluster.py`: this script builds commands that create three batches in a directory, as
-well as the `COBS` indexes for these batches, and 2000 positive and negative queries with 1000-bp length each. These
-queries are then ran agains the indexes with and without the `--load-complete` flag. This is meant to be run in the
+well as the `COBS` indexes for these batches, and 500 positive and negative queries with [100, 200, 500, 1000, 10_000, 100_000]-bp length each. These
+queries are then ran against the indexes with and without the `--load-complete` flag. This is meant to be run in the
 cluster or another `linux` machine with a `linux` version of `COBS`.
 
 * `create_command_lines_run_on_local_mac.py`: this script takes some of the input created previously and create
