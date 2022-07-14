@@ -30,6 +30,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+
+#define VERSION "0.2.0"
+
+
 /******************************************************************************/
 
 // some often repeated strings
@@ -942,6 +946,13 @@ int generate_queries(int argc, char** argv) {
 
 /******************************************************************************/
 
+int version(int argc, char** argv) {
+  std::cout << "COBS version " << VERSION << std::endl;
+  return 0;
+}
+
+/******************************************************************************/
+
 struct SubTool {
     const char* name;
     int (* func)(int argc, char* argv[]);
@@ -998,11 +1009,14 @@ struct SubTool subtools[] = {
         "generate-queries", &generate_queries, true,
         "select queries randomly from documents"
     },
+    {
+      "version", &version, true, "prints version and exit"
+    },
     { nullptr, nullptr, true, nullptr }
 };
 
 int main_usage(const char* arg0) {
-    std::cout << "(Co)mpact (B)it-Sliced (S)ignature Index for Genome Search"
+    std::cout << "(Co)mpact (B)it-Sliced (S)ignature Index for Genome Search (version " << VERSION << ")"
               << std::endl << std::endl;
     std::cout << "Usage: " << arg0 << " <subtool> ..." << std::endl << std::endl
               << "Available subtools: " << std::endl;
