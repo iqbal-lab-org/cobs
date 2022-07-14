@@ -53,8 +53,8 @@ set(COBS_DEFINITIONS "")
 set(COBS_INCLUDE_DIRS "")
 set(COBS_LINK_LIBRARIES "")
 
-# enable more warnings
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
+# enable more warningsls
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic -fopenmp -Wall")
 
 # use C++17
 set(CMAKE_CXX_STANDARD 17)
