@@ -58,7 +58,7 @@ and optionally run `make test` to check the build.
 
 If the above does not work and you are using `OS X`, install `gcc` and `g++` and try switching the `cmake` command to:
 ```
-cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++11 ..
+cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
 ```
 
 On `OS X`, `COBS` was tested with `cmake v3.22.3`, `make v3.81`, `gcc/g++-11 v11.2.0`.
