@@ -33,3 +33,26 @@ jobs:
         make
         make test
 
+  mac_build:
+    name: Build and test Mac OS X
+    runs-on: macos-11
+    steps:
+      - name: Install dependencies
+        run: |
+          brew install cmake
+          cmake --version
+          gcc --version
+          g++ --version
+
+      - name: Check out code for the build
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Build and test
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make
+          make test
