@@ -1,5 +1,8 @@
 # Compact Bit-Sliced Signature Index (COBS)
 
+![CI](https://github.com/iqbal-lab-org/cobs/actions/workflows/build.yaml/badge.svg)
+
+
 COBS (COmpact Bit-sliced Signature index) is a cross-over between an inverted index and Bloom filters. Our target application is to index k-mers of DNA samples or q-grams from text documents and process **approximate pattern matching** queries on the corpus with a user-chosen coverage threshold. Query results may contain a number of false positives which decreases exponentially with the query length and the false positive rate of the index determined at construction time.
 COBS' compact but simple data structure outperforms other indexes in construction time and query performance with Mantis by Pandey et al. in second place.
 However, unlike Mantis and other previous work, COBS does not need the complete index in RAM and is thus designed to scale to larger document sets.
@@ -7,7 +10,6 @@ However, unlike Mantis and other previous work, COBS does not need the complete 
 ![cobs-architecture](https://user-images.githubusercontent.com/2604907/58323540-91b52100-7e24-11e9-933d-98b9b24ae041.png)
 
 COBS has two interfaces: (
-[![Build Status](https://travis-ci.org/bingmann/cobs.svg?branch=master)](https://travis-ci.org/bingmann/cobs)
 [![Coverage Status](https://coveralls.io/repos/github/bingmann/cobs/badge.svg?branch=master)](https://coveralls.io/github/bingmann/cobs?branch=master)
 )
 
