@@ -33,13 +33,13 @@ class FastaSubfile
 public:
     FastaSubfile(std::string path, std::string name,
                  std::istream::pos_type pos_begin,
-                 size_t size,
+                 uint64_t size,
                  const ThreadObjectArrayPtr<std::ifstream>& ifstream_array)
         : path_(path), name_(name), pos_begin_(pos_begin), size_(size),
           ifstream_array_(ifstream_array) { }
 
     template <typename Callback>
-    void process_terms(size_t term_size, Callback callback) {
+    void process_terms(uint64_t term_size, Callback callback) {
         auto is = ifstream_array_->get(path_);
 
         is->clear();
@@ -56,7 +56,7 @@ public:
             if (data.empty())
                 continue;
 
-            for (size_t i = 0; i + term_size <= data.size(); ++i) {
+            for (uint64_t i = 0; i + term_size <= data.size(); ++i) {
                 callback(tlx::string_view(data.data() + i, term_size));
             }
             data.erase(0, data.size() - term_size + 1);
@@ -70,7 +70,7 @@ public:
     uint64_t pos_begin() const { return pos_begin_; }
 
     //! Returns size_
-    size_t size() const { return size_; }
+    uint64_t size() const { return size_; }
 
 private:
     //! file path
@@ -80,7 +80,7 @@ private:
     //! start position in fasta file
     std::istream::pos_type pos_begin_;
     //! length of the sequence
-    size_t size_;
+    uint64_t size_;
     //! file handle thread array
     ThreadObjectArrayPtr<std::ifstream> ifstream_array_;
 };
@@ -163,7 +163,7 @@ public:
                 // > document header
                 std::string name = line;
                 std::istream::pos_type pos_begin = is.tellg();
-                size_t size = 0;
+                uint64_t size = 0;
 
                 if (name.size() > 16)
                     name.resize(16);
@@ -200,7 +200,7 @@ public:
     void write_cache_file(std::string path) {
         std::ofstream os(cache_path(path) + ".tmp");
         stream_put_pod(os, index_->size());
-        for (size_t i = 0; i < index_->size(); ++i) {
+        for (uint64_t i = 0; i < index_->size(); ++i) {
             stream_put_pod(os, (*index_)[i].size());
             stream_put_pod(os, (*index_)[i].pos_begin());
             os << (*index_)[i].name() << '\0';
@@ -214,13 +214,13 @@ public:
     bool read_cache_file(std::string path) {
         std::ifstream is(cache_path(path));
         if (!is.good()) return false;
-        size_t list_size;
+        uint64_t list_size;
         stream_get_pod(is, list_size);
         LOG1 << "FastaMultifile: loading index " << cache_path(path)
              << " [" << list_size << " documents]";
         index_ = std::make_shared<FastaSubfileList>();
-        for (size_t i = 0; i < list_size; ++i) {
-            size_t size;
+        for (uint64_t i = 0; i < list_size; ++i) {
+            uint64_t size;
             uint64_t pos_begin;
             std::string name;
 
@@ -235,19 +235,19 @@ public:
     }
 
     //! return number of sub-documents
-    size_t num_documents() const {
+    uint64_t num_documents() const {
         return index_->size();
     }
 
     //! return size of a sub-document
-    size_t size(size_t doc_index) const {
+    uint64_t size(uint64_t doc_index) const {
         if (doc_index >= index_->size())
             return 0;
         return (*index_)[doc_index].size();
     }
 
     template <typename Callback>
-    void process_terms(size_t doc_index, size_t term_size, Callback callback) {
+    void process_terms(uint64_t doc_index, uint64_t term_size, Callback callback) {
         if (doc_index >= index_->size())
             return;
         (*index_)[doc_index].process_terms(term_size, callback);

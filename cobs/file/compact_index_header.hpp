@@ -32,7 +32,7 @@ public:
     //! size of each subindex in bytes
     uint64_t page_size_;
 
-    size_t padding_size(uint64_t curr_stream_pos) const;
+    uint64_t padding_size(uint64_t curr_stream_pos) const;
 
 public:
     static const std::string magic_word;

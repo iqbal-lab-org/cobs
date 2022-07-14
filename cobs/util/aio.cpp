@@ -13,7 +13,9 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <iostream>
-#include <linux/aio_abi.h>
+#ifdef __linux__
+    #include <linux/aio_abi.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/syscall.h>

@@ -86,7 +86,7 @@ template <typename CharT, typename Traits>
 basic_zip_streambuf<CharT, Traits>::basic_zip_streambuf(
     ostream_reference ostream,
     int level, ZipStrategy strategy,
-    int window_size, int memory_level, size_t buffer_size)
+    int window_size, int memory_level, uint64_t buffer_size)
     : ostream_(ostream),
       output_buffer_(buffer_size, 0),
       buffer_(buffer_size, 0),
@@ -121,7 +121,7 @@ basic_zip_streambuf<CharT, Traits>::~basic_zip_streambuf() {
 template <typename CharT, typename Traits>
 int
 basic_zip_streambuf<CharT, Traits>::sync() {
-    size_t size = static_cast<size_t>(this->pptr() - this->pbase());
+    uint64_t size = static_cast<uint64_t>(this->pptr() - this->pbase());
 
     LOG << "basic_zip_streambuf::sync()"
         << " size=" << size;
@@ -137,7 +137,7 @@ typename basic_zip_streambuf<CharT, Traits>::int_type
 basic_zip_streambuf<CharT, Traits>::overflow(int_type c) {
     LOG << "basic_zip_streambuf::overflow() c=" << c;
 
-    size_t size = static_cast<size_t>(this->pptr() - this->pbase());
+    uint64_t size = static_cast<uint64_t>(this->pptr() - this->pbase());
     if (c != Traits::eof())
     {
         *this->pptr() = static_cast<char>(c);
@@ -214,7 +214,7 @@ basic_zip_streambuf<CharT, Traits>::get_in_size() const {
 }
 
 template <typename CharT, typename Traits>
-unsigned long
+uint64_t
 basic_zip_streambuf<CharT, Traits>::get_out_size() const {
     return zip_stream_.total_out;
 }
@@ -268,7 +268,7 @@ basic_zip_streambuf<CharT, Traits>::zip_to_stream(
 template <typename CharT, typename Traits>
 basic_unzip_streambuf<CharT, Traits>::basic_unzip_streambuf(
     istream_reference istream, int window_size,
-    size_t read_buffer_size, size_t input_buffer_size)
+    uint64_t read_buffer_size, uint64_t input_buffer_size)
     : istream_(istream),
       input_buffer_(input_buffer_size),
       buffer_(read_buffer_size),
@@ -298,7 +298,7 @@ template <typename CharT, typename Traits>
 typename basic_unzip_streambuf<CharT, Traits>::int_type
 basic_unzip_streambuf<CharT, Traits>::underflow() {
     if (this->gptr() && (this->gptr() < this->egptr()))
-        return *reinterpret_cast<unsigned char*>(this->gptr());
+        return *reinterpret_cast<uint8_t *>(this->gptr());
 
     int n_putback = static_cast<int>(this->gptr() - this->eback());
     if (n_putback > 4)
@@ -321,7 +321,7 @@ basic_unzip_streambuf<CharT, Traits>::underflow() {
                buffer_.data() + 4 + num);        // end of buffer
 
     // return next character
-    return *reinterpret_cast<unsigned char*>(this->gptr());
+    return *reinterpret_cast<uint8_t*>(this->gptr());
 }
 
 template <typename CharT, typename Traits>
@@ -349,7 +349,7 @@ basic_unzip_streambuf<CharT, Traits>::get_crc() const {
 }
 
 template <typename CharT, typename Traits>
-unsigned long
+uint64_t
 basic_unzip_streambuf<CharT, Traits>::get_out_size() const {
     return zip_stream_.total_out;
 }
@@ -381,7 +381,7 @@ basic_unzip_streambuf<CharT, Traits>::unzip_from_stream(
     char_type* buffer, std::streamsize buffer_size) {
     zip_stream_.next_out = reinterpret_cast<byte_type*>(buffer);
     zip_stream_.avail_out = static_cast<uInt>(buffer_size * sizeof(char_type));
-    size_t count = zip_stream_.avail_in;
+    uint64_t count = zip_stream_.avail_in;
 
     do
     {
@@ -412,7 +412,7 @@ basic_unzip_streambuf<CharT, Traits>::unzip_from_stream(
 }
 
 template <typename CharT, typename Traits>
-size_t
+uint64_t
 basic_unzip_streambuf<CharT, Traits>::fill_input_buffer() {
     zip_stream_.next_in = input_buffer_.data();
     istream_.read(reinterpret_cast<char_type*>(input_buffer_.data()),
@@ -433,7 +433,7 @@ template <typename CharT, typename Traits>
 basic_zip_ostream<CharT, Traits>::basic_zip_ostream(
     ostream_reference ostream,
     ZipFormat format, int level, ZipStrategy strategy,
-    int window_size, int memory_level, size_t buffer_size)
+    int window_size, int memory_level, uint64_t buffer_size)
     : basic_zip_streambuf<CharT, Traits>(ostream, level, strategy, window_size,
                                          memory_level, buffer_size),
       std::basic_ostream<CharT, Traits>(this),
@@ -517,7 +517,7 @@ basic_zip_ostream<CharT, Traits>& basic_zip_ostream<CharT, Traits>::add_footer()
 template <typename CharT, typename Traits>
 basic_zip_istream<CharT, Traits>::basic_zip_istream(
     istream_reference istream,
-    int window_size, size_t read_buffer_size, size_t input_buffer_size)
+    int window_size, uint64_t read_buffer_size, uint64_t input_buffer_size)
     : basic_unzip_streambuf<CharT, Traits>(
           istream, window_size,
           read_buffer_size, input_buffer_size),

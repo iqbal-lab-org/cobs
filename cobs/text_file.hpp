@@ -30,31 +30,31 @@ public:
     }
 
     //! return size of a text document
-    size_t size() {
+    uint64_t size() {
         is_.clear();
         is_.seekg(0, std::ios::end);
         return is_.tellg();
     }
 
     //! return number of q-grams in document
-    size_t num_terms(size_t q) {
-        size_t n = size();
+    uint64_t num_terms(uint64_t q) {
+        uint64_t n = size();
         return n < q ? 0 : n - q + 1;
     }
 
     template <typename Callback>
-    void process_terms(size_t term_size, Callback callback) {
+    void process_terms(uint64_t term_size, Callback callback) {
         is_.clear();
         is_.seekg(0);
 
         char buffer[64 * 1024];
-        size_t pos = 0;
+        uint64_t pos = 0;
 
         while (!is_.eof()) {
             is_.read(buffer + pos, sizeof(buffer) - pos);
-            size_t wb = is_.gcount();
+            uint64_t wb = is_.gcount();
 
-            for (size_t i = 0; i + term_size <= pos + wb; ++i) {
+            for (uint64_t i = 0; i + term_size <= pos + wb; ++i) {
                 callback(tlx::string_view(buffer + i, term_size));
             }
 

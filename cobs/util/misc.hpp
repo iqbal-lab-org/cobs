@@ -25,24 +25,24 @@ uint64_t get_page_size();
 
 uint64_t get_memory_size();
 
-uint64_t get_memory_size(size_t percentage);
+uint64_t get_memory_size(uint64_t percentage);
 
 template <typename RandomGenerator>
-std::string random_sequence_rng(size_t size, RandomGenerator& rng) {
+std::string random_sequence_rng(uint64_t size, RandomGenerator& rng) {
     static const std::array<char, 4> basepairs = { 'A', 'C', 'G', 'T' };
     std::string result;
-    for (size_t i = 0; i < size; i++) {
+    for (uint64_t i = 0; i < size; i++) {
         result += basepairs[rng() % 4];
     }
     return result;
 }
 
-std::string random_sequence(size_t size, size_t seed);
+std::string random_sequence(uint64_t size, uint64_t seed);
 
 template <typename T>
-T * allocate_aligned(uint64_t size, size_t alignment) {
+T * allocate_aligned(uint64_t size, uint64_t alignment) {
     T* ptr;
-    int r = posix_memalign(reinterpret_cast<void**>(&ptr), alignment, sizeof(T) * size);
+    int64_t r = posix_memalign(reinterpret_cast<void**>(&ptr), alignment, sizeof(T) * size);
     if (r != 0)
         throw std::runtime_error("Out of memory");
     std::fill(ptr, ptr + size, 0);
@@ -55,17 +55,17 @@ void deallocate_aligned(void* ptr) {
 }
 
 static inline
-std::string pad_index(unsigned index, int size = 6) {
-    return tlx::ssprintf("%0*u", size, index);
+std::string pad_index(uint64_t index, int size = 6) {
+    return tlx::ssprintf("%0*lu", size, index);
 }
 
 /*!
  * Constructs the hash used by the signatures.
  */
 template <typename Callback>
-void process_hashes(const void* input, size_t size, uint64_t signature_size,
+void process_hashes(const void* input, uint64_t size, uint64_t signature_size,
                     uint64_t num_hashes, Callback callback) {
-    for (unsigned int i = 0; i < num_hashes; i++) {
+    for (uint64_t i = 0; i < num_hashes; i++) {
         uint64_t hash = XXH64(input, size, i);
         callback(hash % signature_size);
     }

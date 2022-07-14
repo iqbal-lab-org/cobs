@@ -21,7 +21,7 @@
 
 namespace cobs {
 
-template <unsigned int N>
+template <uint64_t N>
 class KMerBuffer
 {
 private:
@@ -37,11 +37,11 @@ public:
         return m_data;
     }
 
-    const KMer<N>& operator [] (size_t i) const {
+    const KMer<N>& operator [] (uint64_t i) const {
         return m_data[i];
     }
 
-    size_t num_kmers() const {
+    uint64_t num_kmers() const {
         return m_data.size();
     }
 
@@ -68,7 +68,7 @@ public:
         h.deserialize(is);
         die_unless(N == h.kmer_size());
 
-        size_t size = get_stream_size(is);
+        uint64_t size = get_stream_size(is);
         m_data.resize(size / KMer<N>::size);
         is.read(reinterpret_cast<char*>(m_data.data()), size);
     }
@@ -79,9 +79,9 @@ public:
     }
 };
 
-template <unsigned int N>
+template <uint64_t N>
 void KMerBuffer<N>::print(std::ostream& ostream) const {
-    for (size_t i = 0; i < m_data.size(); i++) {
+    for (uint64_t i = 0; i < m_data.size(); i++) {
         ostream << m_data[i] << std::endl;
     }
 }

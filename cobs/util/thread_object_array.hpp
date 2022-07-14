@@ -28,12 +28,12 @@ template <typename Type>
 class ThreadObjectLRUSet
 {
 public:
-    ThreadObjectLRUSet(size_t limit)
+    ThreadObjectLRUSet(uint64_t limit)
         : limit_(limit) { }
 
     tlx::LruCacheSet<std::shared_ptr<Type> > lru_set_;
     std::mutex mutex_;
-    size_t limit_;
+    uint64_t limit_;
 
     void put(const std::shared_ptr<Type>& ptr) {
         while (lru_set_.size() + 1 > limit_) {

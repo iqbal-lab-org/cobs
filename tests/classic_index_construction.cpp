@@ -7,10 +7,6 @@
  ******************************************************************************/
 #include <fstream>
 #include <algorithm>
-
-#include <fstream>
-#include <algorithm>
-
 #include "test_util.hpp"
 #include <cobs/file/classic_index_header.hpp>
 #include <cobs/query/classic_index/mmap_search_file.hpp>

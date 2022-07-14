@@ -41,7 +41,7 @@ struct ClassicIndexParameters {
     //! memory to use bytes to create index
     uint64_t mem_bytes = get_memory_size(80);
     //! number of threads to use
-    size_t num_threads = gopt_threads;
+    unsigned num_threads = gopt_threads;
     //! log prefix (used by compact index construction)
     std::string log_prefix;
     //! clobber erase output directory if it exists, default: false
@@ -75,15 +75,15 @@ void classic_construct_from_documents(
  */
 bool classic_combine(
     const fs::path& in_dir, const fs::path& out_dir, fs::path& result_file,
-    uint64_t mem_bytes, size_t num_threads, bool keep_temporary);
+    uint64_t mem_bytes, uint64_t num_threads, bool keep_temporary);
 
 /*!
  * Constructs a classic index filled with random data.
  */
 void classic_construct_random(
     const fs::path& out_file, uint64_t signature_size,
-    uint64_t num_documents, size_t document_size,
-    uint64_t num_hashes, size_t seed);
+    uint64_t num_documents, uint64_t document_size,
+    uint64_t num_hashes, uint64_t seed);
 
 } // namespace cobs
 

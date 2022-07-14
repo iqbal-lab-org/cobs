@@ -39,7 +39,7 @@ void destroy_mmap(MMapHandle& handle);
 //! output buffer, replacing letters with zeros, or with the reverse
 //! complement. The output pointer must point to a memory area of size
 //! bytes. The output is not returned null-terminated!.
-bool canonicalize_kmer(const char* input, char* output, size_t size);
+bool canonicalize_kmer(const char* input, char* output, uint64_t size);
 
 } // namespace cobs
 

@@ -29,7 +29,7 @@ public:
     void search(
         const std::string& query,
         std::vector<SearchResult>& result,
-        double threshold = 0.0, size_t num_results = 0) final;
+        double threshold = 0.0, uint64_t num_results = 0) final;
 
 protected:
     //! reference to index file query object to retrieve data

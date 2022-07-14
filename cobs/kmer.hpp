@@ -29,14 +29,14 @@ uint32_t chars_to_int(char c1, char c2, char c3, char c4) {
 }
 
 extern const char* kmer_byte_to_base_pairs[256];
-extern const std::unordered_map<unsigned int, uint8_t> kmer_bps_to_uint8_t;
+extern const std::unordered_map<uint64_t, uint8_t> kmer_bps_to_uint8_t;
 extern uint8_t kmer_mirror_pairs[256];
 
-template <unsigned int N>
+template <uint64_t N>
 class KMer : public std::array<uint8_t, (N + 3) / 4>
 {
 public:
-    static const size_t size = (N + 3) / 4;
+    static const uint64_t size = (N + 3) / 4;
 
     using Super = std::array<uint8_t, (N + 3) / 4>;
     using Super::data;
@@ -52,7 +52,7 @@ public:
     }
 
     void init(const char* chars) {
-        for (int i = N - 4; i >= -3; i -= 4) {
+        for (int64_t i = N - 4; i >= -3; i -= 4) {
             if (i >= 0) {
                 data()[(N - (i + 4)) / 4] =
                     kmer_bps_to_uint8_t.at(*((uint32_t*)(chars + i)));
@@ -69,7 +69,7 @@ public:
     std::string string() const {
         std::string result;
         result.reserve(N);
-        for (size_t i = 0; i < size; ++i) {
+        for (uint64_t i = 0; i < size; ++i) {
             if (TLX_UNLIKELY(i == 0 && N % 4 != 0)) {
                 result += kmer_byte_to_base_pairs[
                     data()[size - 1 - i]] + (4 - N % 4);
@@ -84,7 +84,7 @@ public:
 
     std::string& to_string(std::string* out) const {
         out->clear();
-        for (size_t i = 0; i < size; ++i) {
+        for (uint64_t i = 0; i < size; ++i) {
             if (TLX_UNLIKELY(i == 0 && N % 4 != 0)) {
                 *out += kmer_byte_to_base_pairs[
                     data()[size - 1 - i]] + (4 - N % 4);
@@ -102,8 +102,8 @@ public:
     }
 
     static void init(const char* chars, char* kmer_data, uint32_t kmer_size) {
-        int kmer_size_int = kmer_size;
-        for (int i = kmer_size_int - 4; i >= -3; i -= 4) {
+        int64_t kmer_size_int = kmer_size;
+        for (int64_t i = kmer_size_int - 4; i >= -3; i -= 4) {
             if (i >= 0) {
                 kmer_data[(kmer_size_int - (i + 4)) / 4] =
                     kmer_bps_to_uint8_t.at(*((uint32_t*)(chars + i)));
@@ -128,7 +128,7 @@ public:
 
     template <typename RandomGenerator>
     void fill_random(RandomGenerator& rng) {
-        size_t i = 0;
+        uint64_t i = 0;
         for ( ; i + 3 < size; i += 4) {
             *reinterpret_cast<uint32_t*>(data() + i) = rng();
         }
@@ -138,7 +138,7 @@ public:
     }
 
     //! return 0 (A), 1 (C), 2 (G), or 3 (T) letter at index
-    uint8_t at(size_t index) const {
+    uint8_t at(uint64_t index) const {
         assert(index < N);
         // skip unused bits at the end
         index += (4 - N % 4);
@@ -149,7 +149,7 @@ public:
         // base pair mirror_map map. A -> T, C -> G, G -> C, T -> A.
         // static const uint8_t mirror_map[4] = { 3, 2, 1, 0 };
 
-        size_t i = 0, r = N - 1;
+        uint64_t i = 0, r = N - 1;
         while (at(i) == (3 - at(r)) && i < N / 2)
             ++i, --r;
 
@@ -164,7 +164,7 @@ public:
         // last byte contains only (N % 4) base pairs
         uint8_t overflow =
             static_cast<uint8_t>(data()[size - 1]) << (2 * (4 - N % 4));
-        for (size_t i = 1; i < size; i++) {
+        for (uint64_t i = 1; i < size; i++) {
             uint8_t bp = static_cast<uint8_t>(data()[size - 1 - i]);
             overflow |= bp >> (2 * (N % 4));
             buffer[i - 1] = kmer_mirror_pairs[overflow];

@@ -17,8 +17,8 @@ namespace cobs {
 class CompactIndexSearchFile : public IndexSearchFile
 {
 protected:
-    size_t num_hashes_;
-    size_t row_size_;
+    uint64_t num_hashes_;
+    uint64_t row_size_;
     explicit CompactIndexSearchFile(const fs::path& path);
 
     uint32_t term_size() const final { return header_.term_size_; }

@@ -67,9 +67,10 @@ MMapHandle initialize_mmap(const fs::path& path)
 #endif
         lseek(fd, 0, SEEK_SET);
         uint64_t remain = size;
-        size_t pos = 0;
+        const uint64_t one_gb = 1024*1024*1024;
+        uint64_t pos = 0;
         while (remain != 0) {
-            ssize_t rb = read(fd, data_ptr + pos, remain);
+            int64_t rb = read(fd, data_ptr + pos, std::min(one_gb, remain));
             if (rb < 0) {
                 print_errno("read failed");
                 break;
@@ -140,7 +141,7 @@ static const char canonicalize_basepair_reverse_map[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-bool canonicalize_kmer(const char* input, char* output, size_t size)
+bool canonicalize_kmer(const char* input, char* output, uint64_t size)
 {
     const char* fmap = canonicalize_basepair_forward_map;
     const char* rmap = canonicalize_basepair_reverse_map;
@@ -151,7 +152,7 @@ bool canonicalize_kmer(const char* input, char* output, size_t size)
     const uint8_t* rinput = finput + size - 1;
     char* foutput = output;
 
-    size_t i = 0;
+    uint64_t i = 0;
     for ( ; i < size / 2; ++i) {
         // map values at forward and reverse pointers
         char f = fmap[*(finput + i)];
@@ -175,7 +176,7 @@ bool canonicalize_kmer(const char* input, char* output, size_t size)
         }
         else if (f > r) {
             // calculate reverse k-mer and check input while reversing
-            for (size_t j = 0; j < size; j++) {
+            for (uint64_t j = 0; j < size; j++) {
                 char x = rmap[finput[j]];
                 output[size - j - 1] = x;
                 good = good && (x != 0);
