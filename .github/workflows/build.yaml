@@ -22,9 +22,8 @@ jobs:
 
     - name: Check out code for the build
       uses: actions/checkout@v2
-
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
+      with:
+        submodules: recursive
 
     - name: Build and test
       run: |
