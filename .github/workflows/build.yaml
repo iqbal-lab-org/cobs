@@ -39,7 +39,9 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          brew install cmake
+          brew install cmake gcc g++
+          which gcc
+          which g++
           cmake --version
           gcc --version
           g++ --version
