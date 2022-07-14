@@ -198,3 +198,5 @@ add_subdirectory(tests)
 add_subdirectory(python)
 
 ################################################################################
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
