@@ -39,12 +39,12 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          brew install cmake gcc g++
-          which gcc
-          which g++
+          brew install cmake gcc@12
+          which gcc-12
+          which g++-12
           cmake --version
-          gcc --version
-          g++ --version
+          gcc-12 --version
+          g++-12 --version
 
       - name: Check out code for the build
         uses: actions/checkout@v2
@@ -55,6 +55,6 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ ..
+          cmake -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 ..
           make
           make test
