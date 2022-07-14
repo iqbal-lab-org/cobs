@@ -9,5 +9,5 @@ python/docs/_generated
 *.cobs_classic
 *.cobs_compact
 __pycache__
-cobs.tar
-cobs.tar.gz
+cobs-*.tar
+cobs-*.tar.gz
