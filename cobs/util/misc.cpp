@@ -12,6 +12,9 @@
 #include <sys/types.h>
 #include <tlx/die.hpp>
 
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
 
 // portable way to get phys_pages from https://stackoverflow.com/a/30512156/5264075
 #define PHYS_PAGES get_phys_pages()
