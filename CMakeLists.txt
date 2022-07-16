@@ -53,15 +53,15 @@ set(COBS_DEFINITIONS "")
 set(COBS_INCLUDE_DIRS "")
 set(COBS_LINK_LIBRARIES "")
 
-# enable more warningsls
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic -fopenmp -Wall")
+# enable more warnings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wpedantic -Wall")
 
 # use C++17
 set(CMAKE_CXX_STANDARD 17)
 
-# enable warnings
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -march=native -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -march=native -fPIC")
+# additional default flags
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
 
 # with run-time STL checks
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_DEBUG")
@@ -141,7 +141,6 @@ endif(COBS_USE_GCOV)
 ### Find Required Libraries
 
 ### find pthreads ###
-
 find_package(Threads REQUIRED)
 set(COBS_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${COBS_LINK_LIBRARIES})
 if(CMAKE_USE_PTHREADS_INIT)
@@ -149,19 +148,14 @@ if(CMAKE_USE_PTHREADS_INIT)
 endif()
 
 ### use Google Test ###
-
 add_subdirectory(extlib/googletest)
-
 enable_testing()
 include(GoogleTest)
 
 ### use xxHash ###
-
 add_subdirectory(extlib/xxhash/cmake_unofficial)
 set(COBS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/extlib/xxhash ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES xxhash ${COBS_LINK_LIBRARIES})
-
-### use ZLIB ###
 
 ### use ZLIB ###
 if(NOT CONDA)
@@ -169,23 +163,20 @@ if(NOT CONDA)
   set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
   set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
 else()
-  # this is required for conda to find ZLIB
+  # this is required to find ZLIB in a conda env
   set(COBS_INCLUDE_DIRS $ENV{CONDA_PREFIX}/include ${COBS_INCLUDE_DIRS})
   set(COBS_LINK_LIBRARIES $ENV{CONDA_PREFIX}/lib/libz.so ${COBS_LINK_LIBRARIES})
 endif()
 
 ### use Boost filesystem ###
-
 find_package(Boost 1.42.0 COMPONENTS system filesystem)
 if(${Boost_FOUND})
   set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
   set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
 endif()
-
 set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
 
 ### use TLX ###
-
 add_subdirectory(extlib/tlx)
 set(COBS_LINK_LIBRARIES tlx ${COBS_LINK_LIBRARIES})
 
