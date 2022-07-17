@@ -174,8 +174,8 @@ find_package(Boost 1.42.0 COMPONENTS system filesystem)
 set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
 message(STATUS "BOOST!!!")
-message(${Boost_INCLUDE_DIRS})
-message(${Boost_LIBRARIES})
+message(STATUS ${Boost_INCLUDE_DIRS})
+message(STATUS ${Boost_LIBRARIES})
 
 ### use TLX ###
 add_subdirectory(extlib/tlx)
