@@ -169,6 +169,7 @@ else()
 endif()
 
 ### use Boost filesystem ###
+set(Boost_USE_STATIC_LIBS   ON)
 find_package(Boost 1.42.0 COMPONENTS system filesystem)
 if(${Boost_FOUND})
   set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
