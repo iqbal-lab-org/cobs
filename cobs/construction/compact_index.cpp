@@ -173,7 +173,7 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
     uint64_t iteration = 1;
 
     // check output file
-    if (!tlx::ends_with(index_file, CompactIndexHeader::file_extension)) {
+    if (!tlx::ends_with(index_file.string(), CompactIndexHeader::file_extension)) {
         die("Error: classic COBS index file must end with "
             << CompactIndexHeader::file_extension);
     }
@@ -198,7 +198,7 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
     if (num_threads == 0) num_threads = 1;
 
     // check output and maybe clobber
-    if (!tlx::ends_with(index_file, CompactIndexHeader::file_extension)) {
+    if (!tlx::ends_with(index_file.string(), CompactIndexHeader::file_extension)) {
         die("Error: classic COBS index file must end with "
             << CompactIndexHeader::file_extension);
     }

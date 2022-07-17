@@ -504,8 +504,11 @@ int query(int argc, char** argv) {
     if (!cp.sort().process(argc, argv))
         return -1;
 
-
-    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_files);
+    std::vector<cobs::fs::path> index_paths;
+    for (const std::string &file : index_files) {
+      index_paths.push_back(cobs::fs::path(file));
+    }
+    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_paths);
     cobs::ClassicSearch s(indices);
     cobs::process_query(s, threshold, num_results, query, query_file);
 

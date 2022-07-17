@@ -31,6 +31,8 @@ namespace cobs {
 class FastaFile
 {
 public:
+    FastaFile(const fs::path &path, bool use_cache = true) : FastaFile(path.string(), use_cache) {}
+
     FastaFile(std::string path, bool use_cache = true) : path_(path) {
         is_.open(path);
         die_unless(is_.good());

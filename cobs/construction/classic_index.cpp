@@ -596,7 +596,7 @@ void classic_construct(
          << "  keep_temporary: " << unsigned(params.keep_temporary);
 
     // check output and maybe clobber
-    if (!tlx::ends_with(out_file, ClassicIndexHeader::file_extension)) {
+    if (!tlx::ends_with(out_file.string(), ClassicIndexHeader::file_extension)) {
         die("Error: classic COBS index file must end with "
             << ClassicIndexHeader::file_extension);
     }
@@ -632,7 +632,7 @@ void classic_construct(
 
     // create temporary directory
     std::error_code ec;
-    fs::create_directories(tmp_path, ec);
+    fs::create_directories(tmp_path);
 
     // construct one classic index
     classic_construct_from_documents(filelist, tmp_path / pad_index(1), params);

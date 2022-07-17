@@ -225,8 +225,8 @@ TEST_F(classic_index_construction, combined_index_same_as_classic_constructed) {
                           80, 1, false);
 
     // generate a classic index for both docs through classic_construct
-    std::string classic_constructed_index = index_dir/pad_index(2)/(pad_index(0) +
-            ".cobs_classic");
+    std::string classic_constructed_index = (index_dir/pad_index(2)/(pad_index(0) +
+            ".cobs_classic")).string();
     cobs::classic_construct(cobs::DocumentList(input_dir), classic_constructed_index,
             tmp_path, index_params);
 

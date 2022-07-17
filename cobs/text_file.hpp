@@ -24,6 +24,8 @@ namespace cobs {
 class TextFile
 {
 public:
+    TextFile(const fs::path &path) : TextFile(path.string()) {}
+
     TextFile(std::string path) : path_(path) {
         is_.open(path);
         die_unless(is_.good());

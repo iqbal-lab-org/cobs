@@ -114,6 +114,7 @@ private:
 class FastaMultifile
 {
 public:
+    FastaMultifile(const fs::path &path, bool use_cache = true) : FastaMultifile(path.string(), use_cache) {}
     FastaMultifile(std::string path, bool use_cache = true) {
         std::ifstream is(path);
         die_unless(is.good());
