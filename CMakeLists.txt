@@ -171,11 +171,11 @@ endif()
 ### use Boost filesystem ###
 set(Boost_USE_STATIC_LIBS   ON)
 find_package(Boost 1.42.0 COMPONENTS system filesystem)
-if(${Boost_FOUND})
-  set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
-endif()
-set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
+set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
+set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
+message(STATUS "BOOST!!!")
+message(${Boost_INCLUDE_DIRS})
+message(${Boost_LIBRARIES})
 
 ### use TLX ###
 add_subdirectory(extlib/tlx)
