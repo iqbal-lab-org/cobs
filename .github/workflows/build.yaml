@@ -76,4 +76,4 @@ jobs:
           cd build
           cmake -DBOOST=1 -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
           make
-          env CTEST_OUTPUT_ON_FAILURE=1 make test
+          make test
