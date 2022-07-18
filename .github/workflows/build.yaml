@@ -16,9 +16,6 @@ jobs:
 #    - name: Install dependencies
 #      run: |
 #        sudo apt-get install cmake
-#        cmake --version
-#        gcc --version
-#        g++ --version
 #
 #    - name: Check out code for the build
 #      uses: actions/checkout@v2
@@ -39,12 +36,7 @@ jobs:
 #    steps:
 #      - name: Install dependencies
 #        run: |
-#          brew install cmake gcc@12
-#          which gcc-12
-#          which g++-12
-#          cmake --version
-#          gcc-12 --version
-#          g++-12 --version
+#          brew install cmake gcc@11
 #
 #      - name: Check out code for the build
 #        uses: actions/checkout@v2
@@ -55,7 +47,7 @@ jobs:
 #        run: |
 #          mkdir build
 #          cd build
-#          cmake -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 ..
+#          cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
 #          make
 #          make test
 
@@ -84,4 +76,4 @@ jobs:
           cd build
           cmake -DBOOST=1 -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
           make
-          make test
+          env CTEST_OUTPUT_ON_FAILURE=1 make test
