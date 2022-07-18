@@ -67,9 +67,10 @@ MMapHandle initialize_mmap(const fs::path& path)
 #endif
         lseek(fd, 0, SEEK_SET);
         uint64_t remain = size;
-        size_t pos = 0;
+        const uint64_t one_gb = 1024*1024*1024;
+        uint64_t pos = 0;
         while (remain != 0) {
-            ssize_t rb = read(fd, data_ptr + pos, remain);
+            int64_t rb = read(fd, data_ptr + pos, std::min(one_gb, remain));
             if (rb < 0) {
                 print_errno("read failed");
                 break;
@@ -100,8 +101,28 @@ void destroy_mmap(MMapHandle& handle)
     close_file(handle.fd);
 }
 
-// character map. A -> T, C -> G, G -> C, T -> A.
-static const char canonicalize_basepair_map[256] = {
+//! forward character map. A -> A, C -> C, G -> G, T -> T. rest maps to zero.
+static const char canonicalize_basepair_forward_map[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 65, 0, 67, 0, 0, 0, 71, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+//! reverse character map. A -> T, C -> G, G -> C, T -> A. rest maps to zero.
+static const char canonicalize_basepair_reverse_map[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -120,26 +141,62 @@ static const char canonicalize_basepair_map[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
-const char * canonicalize_kmer(const char* query_8, char* kmer_buffer, uint32_t kmer_size) {
-    const char* map = canonicalize_basepair_map;
-    const uint8_t* query_8_reverse =
-        reinterpret_cast<const uint8_t*>(query_8) + kmer_size - 1;
-    size_t i = 0;
-    while (query_8[i] == map[*(query_8_reverse - i)] && i < kmer_size / 2) {
-        i++;
+bool canonicalize_kmer(const char* input, char* output, uint64_t size)
+{
+    const char* fmap = canonicalize_basepair_forward_map;
+    const char* rmap = canonicalize_basepair_reverse_map;
+
+    bool good = true;
+
+    const uint8_t* finput = reinterpret_cast<const uint8_t*>(input);
+    const uint8_t* rinput = finput + size - 1;
+    char* foutput = output;
+
+    uint64_t i = 0;
+    for ( ; i < size / 2; ++i) {
+        // map values at forward and reverse pointers
+        char f = fmap[*(finput + i)];
+        char r = rmap[*(rinput - i)];
+
+        *foutput++ = f;
+
+        // good canonicalization if both are not mapped to zero.
+        good = good && (f != 0) && (r != 0);
+
+        if (f < r) {
+            // the input is the lexicographic smaller k-mer. keep it.
+
+            // translate remaining input
+            for (++i; i < size; ++i) {
+                char f = fmap[*(finput + i)];
+                *foutput++ = f;
+                good = good && (f != 0);
+            }
+            return good;
+        }
+        else if (f > r) {
+            // calculate reverse k-mer and check input while reversing
+            for (uint64_t j = 0; j < size; j++) {
+                char x = rmap[finput[j]];
+                output[size - j - 1] = x;
+                good = good && (x != 0);
+            }
+            return good;
+        }
+
+        // else f == r and we continue the scan
     }
 
-    if (query_8[i] <= map[*(query_8_reverse - i)]) {
-        return query_8;
+    // the input is the lexicographic smaller k-mer. keep it. special case for
+    // odd number k-mer sizes
+
+    // translate remaining input
+    for ( ; i < size; ++i) {
+        char f = fmap[*(finput + i)];
+        *foutput++ = f;
+        good = good && (f != 0);
     }
-    else {
-        for (size_t j = 0; j < kmer_size; j++) {
-            kmer_buffer[kmer_size - j - 1] =
-                map[static_cast<uint8_t>(query_8[j])];
-        }
-        kmer_buffer[kmer_size] = 0;
-        return kmer_buffer;
-    }
+    return good;
 }
 
 } // namespace cobs

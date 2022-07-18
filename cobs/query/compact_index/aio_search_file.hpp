@@ -10,7 +10,9 @@
 #define COBS_QUERY_COMPACT_INDEX_AIO_SEARCH_FILE_HEADER
 
 #include <cobs/query/compact_index/search_file.hpp>
-#include <linux/aio_abi.h>
+#ifdef __linux__
+    #include <linux/aio_abi.h>
+#endif
 
 namespace cobs {
 

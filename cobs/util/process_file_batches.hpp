@@ -40,8 +40,8 @@ void get_sorted_file_names(const fs::path& in_dir,
 }
 
 template <typename Selector, typename Callback>
-size_t process_file_batches(const fs::path& in_dir, const fs::path& out_dir,
-                            size_t batch_size, Selector selector,
+uint64_t process_file_batches(const fs::path& in_dir, const fs::path& out_dir,
+                            uint64_t batch_size, Selector selector,
                             Callback callback) {
     std::vector<fs::path> sorted_paths;
     get_sorted_file_names(
@@ -57,7 +57,7 @@ size_t process_file_batches(const fs::path& in_dir, const fs::path& out_dir,
     std::string first_filename, last_filename;
 
     std::vector<fs::path> paths;
-    for (size_t i = 0; i < sorted_paths.size(); i++) {
+    for (uint64_t i = 0; i < sorted_paths.size(); i++) {
         if (selector(sorted_paths[i])) {
             std::string filename = cobs::base_name(sorted_paths[i]);
             if (first_filename.empty()) {
@@ -82,7 +82,7 @@ size_t process_file_batches(const fs::path& in_dir, const fs::path& out_dir,
 
     parallel_for(
         0, batch_list.size(), gopt_threads,
-        [&](size_t i) {
+        [&](uint64_t i) {
             callback(batch_list[i].files, batch_list[i].out_file);
         });
 

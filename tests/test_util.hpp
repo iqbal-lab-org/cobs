@@ -16,11 +16,14 @@
 #include <cobs/query/classic_search.hpp>
 #include <cobs/query/compact_index/mmap_search_file.hpp>
 #include <cobs/util/query.hpp>
+#include <cobs/util/fs.hpp>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <string>
 #include <tlx/string/ssprintf.hpp>
 #include <vector>
+
+using namespace cobs;
 
 static inline
 void assert_equals_files(const std::string& f1, const std::string& f2) {
@@ -38,6 +41,11 @@ void assert_equals_files(const std::string& f1, const std::string& f2) {
     }
 }
 
+static inline
+void assert_equals_files_with_paths(const fs::path& f1, const fs::path& f2) {
+  return assert_equals_files(f1.string(), f2.string());
+}
+
 //! Generate documents from a (random) query sequence
 static inline
 std::vector<cobs::KMerBuffer<31> >
@@ -47,9 +55,11 @@ generate_documents_all(const std::string& query,
     cobs::KMer<31> k;
     char kmer_buffer[32];
     for (size_t i = 0; i < num_terms && i < query.size() - 31; i++) {
-        const char* normalized_kmer =
-            cobs::canonicalize_kmer(query.data() + i, kmer_buffer, 31);
-        k.init(normalized_kmer);
+        bool good = cobs::canonicalize_kmer(query.data() + i, kmer_buffer, 31);
+        die_unless(good);
+        kmer_buffer[31] = 0;
+
+        k.init(kmer_buffer);
         for (size_t j = 0; j < documents.size(); j++) {
             if (j % (i % (documents.size() - 1) + 1) == 0) {
                 documents[j].data().push_back(k);
@@ -67,9 +77,12 @@ generate_documents_one(const std::string& query, size_t num_documents = 33) {
     std::vector<cobs::KMerBuffer<31> > documents(num_documents);
     cobs::KMer<31> k;
     char kmer_buffer[32];
-    const char* normalized_kmer =
-        cobs::canonicalize_kmer(query.data(), kmer_buffer, 31);
-    k.init(normalized_kmer);
+
+    bool good = cobs::canonicalize_kmer(query.data(), kmer_buffer, 31);
+    die_unless(good);
+    kmer_buffer[31] = 0;
+
+    k.init(kmer_buffer);
     for (size_t i = 0; i < documents.size(); i++) {
         for (size_t j = 0; j < i * 10 + 1; j++) {
             documents[i].data().push_back(k);
@@ -81,7 +94,8 @@ generate_documents_one(const std::string& query, size_t num_documents = 33) {
 static inline
 void generate_test_case(std::vector<cobs::KMerBuffer<31> > documents,
                         std::string prefix,
-                        const std::string& out_dir) {
+                        const fs::path& out_dir_path) {
+    std::string out_dir = out_dir_path.string();
     for (size_t i = 0; i < documents.size(); i++) {
         std::string file_name = prefix + "document_" + cobs::pad_index(i);
         documents[i].serialize(

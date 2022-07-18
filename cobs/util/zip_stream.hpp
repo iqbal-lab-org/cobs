@@ -76,7 +76,7 @@ zran.c
 namespace cobs {
 
 //! default gzip buffer size, change this to suite your needs
-static const size_t zstream_default_buffer_size = 4096;
+static const uint64_t zstream_default_buffer_size = 4096;
 
 //! Compression strategy, see zlib doc.
 enum class ZipStrategy {
@@ -106,7 +106,7 @@ class basic_zip_streambuf : public std::basic_streambuf<CharT, Traits>
 {
 public:
     typedef std::basic_ostream<CharT, Traits>& ostream_reference;
-    typedef unsigned char byte_type;
+    typedef uint8_t byte_type;
     typedef std::vector<byte_type> byte_vector_type;
     typedef std::vector<CharT> char_vector_type;
     typedef typename std::basic_streambuf<CharT, Traits>::int_type int_type;
@@ -118,7 +118,7 @@ public:
     basic_zip_streambuf(
         ostream_reference ostream,
         int level, ZipStrategy strategy,
-        int window_size, int memory_level, size_t buffer_size);
+        int window_size, int memory_level, uint64_t buffer_size);
 
     ~basic_zip_streambuf();
 
@@ -145,7 +145,7 @@ public:
     uint32_t get_in_size() const;
 
     //! returns the size (bytes) of the compressed data so far.
-    unsigned long get_out_size() const;
+    uint64_t get_out_size() const;
 
 private:
     bool zip_to_stream(char* buffer, std::streamsize buffer_size);
@@ -186,8 +186,8 @@ public:
      */
     basic_unzip_streambuf(istream_reference istream,
                           int window_size,
-                          size_t read_buffer_size,
-                          size_t input_buffer_size);
+                          uint64_t read_buffer_size,
+                          uint64_t input_buffer_size);
 
     ~basic_unzip_streambuf();
 
@@ -206,7 +206,7 @@ public:
     uint32_t get_crc() const;
 
     //! returns the number of uncompressed bytes
-    unsigned long get_out_size() const;
+    uint64_t get_out_size() const;
 
     //! returns the number of read compressed bytes
     uint32_t get_in_size() const;
@@ -217,7 +217,7 @@ private:
     std::streamsize unzip_from_stream(
         char_type* buffer, std::streamsize buffer_size);
 
-    size_t fill_input_buffer();
+    uint64_t fill_input_buffer();
 
     istream_reference istream_;
     z_stream zip_stream_;
@@ -248,7 +248,7 @@ public:
         /* windowBits is passed < 0 to suppress zlib header */
         int window_size = -15,
         int memory_level = 8,
-        size_t buffer_size = zstream_default_buffer_size);
+        uint64_t buffer_size = zstream_default_buffer_size);
 
     ~basic_zip_ostream();
 
@@ -285,8 +285,8 @@ public:
         istream_reference istream,
         /* windowBits is passed < 0 to suppress zlib header */
         int window_size = -15,
-        size_t read_buffer_size = zstream_default_buffer_size,
-        size_t input_buffer_size = zstream_default_buffer_size);
+        uint64_t read_buffer_size = zstream_default_buffer_size,
+        uint64_t input_buffer_size = zstream_default_buffer_size);
 
     //! returns true if it is a gzip file
     bool is_gzip() const;

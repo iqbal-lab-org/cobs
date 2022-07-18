@@ -9,13 +9,14 @@
 
 #include <cobs/construction/classic_index.hpp>
 #include <cobs/construction/compact_index.hpp>
-#include <cobs/construction/ranfold_index.hpp>
 #include <cobs/cortex_file.hpp>
 #include <cobs/query/classic_index/mmap_search_file.hpp>
 #include <cobs/query/classic_search.hpp>
 #include <cobs/query/compact_index/mmap_search_file.hpp>
+#include <cobs/query/search.hpp>
 #include <cobs/settings.hpp>
 #include <cobs/util/calc_signature_size.hpp>
+#include <cobs/util/fs.hpp>
 #ifdef __linux__
     #include <cobs/query/compact_index/aio_search_file.hpp>
 #endif
@@ -29,38 +30,30 @@
 #include <unordered_map>
 #include <unordered_set>
 
+
+#define VERSION "0.2.0"
+
+
 /******************************************************************************/
 
-cobs::FileType StringToFileType(std::string& s) {
-    tlx::to_lower(&s);
-    if (s == "any" || s == "*")
-        return cobs::FileType::Any;
-    if (s == "text" || s == "txt")
-        return cobs::FileType::Text;
-    if (s == "cortex" || s == "ctx")
-        return cobs::FileType::Cortex;
-    if (s == "cobs" || s == "cobs_doc")
-        return cobs::FileType::KMerBuffer;
-    if (s == "fasta")
-        return cobs::FileType::Fasta;
-    if (s == "fastq")
-        return cobs::FileType::Fastq;
-    die("Unknown file type " << s);
-}
+// some often repeated strings
+static const char* s_help_file_type =
+    "\"list\" to read a file list, or "
+    "filter documents by file type (any, text, cortex, fasta, fastq, etc)";
 
 /******************************************************************************/
 // Document List and Dump
 
 static void print_document_list(cobs::DocumentList& filelist,
-                                size_t term_size,
+                                uint64_t term_size,
                                 std::ostream& os = std::cout) {
-    size_t min_kmers = size_t(-1), max_kmers = 0, total_kmers = 0;
+    uint64_t min_kmers = uint64_t(-1), max_kmers = 0, total_kmers = 0;
 
     os << "--- document list (" << filelist.size() << " entries) ---"
        << std::endl;
 
-    for (size_t i = 0; i < filelist.size(); ++i) {
-        size_t num_terms = filelist[i].num_terms(term_size);
+    for (uint64_t i = 0; i < filelist.size(); ++i) {
+        uint64_t num_terms = filelist[i].num_terms(term_size);
         os << "document[" << i << "] size "
            << cobs::fs::file_size(filelist[i].path_)
            << " " << term_size << "-mers " << num_terms
@@ -80,7 +73,7 @@ static void print_document_list(cobs::DocumentList& filelist,
         os << "minimum " << term_size << "-mers: " << min_kmers << std::endl;
         os << "maximum " << term_size << "-mers: " << max_kmers << std::endl;
         os << "average " << term_size << "-mers: "
-           << static_cast<size_t>(avg_kmers) << std::endl;
+           << static_cast<uint64_t>(avg_kmers) << std::endl;
         os << "total " << term_size << "-mers: " << total_kmers << std::endl;
     }
 }
@@ -95,8 +88,7 @@ int doc_list(int argc, char** argv) {
 
     std::string file_type = "any";
     cp.add_string(
-        "file-type", file_type,
-        "filter documents by file type (any, text, cortex, fasta, etc)");
+        "file-type", file_type, s_help_file_type);
 
     unsigned term_size = 31;
     cp.add_unsigned(
@@ -106,7 +98,7 @@ int doc_list(int argc, char** argv) {
     if (!cp.sort().process(argc, argv))
         return -1;
 
-    cobs::DocumentList filelist(path, StringToFileType(file_type));
+    cobs::DocumentList filelist(path, cobs::StringToFileType(file_type));
     print_document_list(filelist, term_size);
 
     return 0;
@@ -132,27 +124,31 @@ int doc_dump(int argc, char** argv) {
 
     std::string file_type = "any";
     cp.add_string(
-        "file-type", file_type,
-        "filter documents by file type (any, text, cortex, fasta, etc)");
+        "file-type", file_type, s_help_file_type);
 
     if (!cp.sort().process(argc, argv))
         return -1;
 
-    cobs::DocumentList filelist(path, StringToFileType(file_type));
+    cobs::DocumentList filelist(path, cobs::StringToFileType(file_type));
 
     std::cerr << "Found " << filelist.size() << " documents." << std::endl;
 
-    for (size_t i = 0; i < filelist.size(); ++i) {
+    for (uint64_t i = 0; i < filelist.size(); ++i) {
         std::cerr << "document[" << i << "] : " << filelist[i].path_
                   << " : " << filelist[i].name_ << std::endl;
         std::vector<char> kmer_buffer(term_size);
         filelist[i].process_terms(
             term_size,
-            [&](const cobs::string_view& t) {
+            [&](const tlx::string_view& t) {
                 if (!no_canonicalize) {
-                    auto kmer = cobs::canonicalize_kmer(
+                    bool good = cobs::canonicalize_kmer(
                         t.data(), kmer_buffer.data(), term_size);
-                    std::cout << std::string(kmer, term_size) << '\n';
+                    if (!good)
+                        std::cout << "Invalid DNA base pair: " << t
+                                  << std::endl;
+                    else
+                        std::cout << std::string(
+                            kmer_buffer.data(), term_size) << '\n';
                 }
                 else {
                     std::cout << t << '\n';
@@ -185,8 +181,7 @@ int classic_construct(int argc, char** argv) {
 
     std::string file_type = "any";
     cp.add_string(
-        "file-type", file_type,
-        "filter input documents by file type (any, text, cortex, fasta, etc)");
+        "file-type", file_type, s_help_file_type);
 
     cp.add_bytes(
         'm', "memory", index_params.mem_bytes,
@@ -208,6 +203,11 @@ int classic_construct(int argc, char** argv) {
         "term size (k-mer size), default: "
         + std::to_string(index_params.term_size));
 
+    cp.add_bytes(
+        's', "sig-size", index_params.signature_size,
+        "signature size, default: "
+        + std::to_string(index_params.signature_size));
+
     bool no_canonicalize = false;
     cp.add_flag(
         "no-canonicalize", no_canonicalize,
@@ -221,7 +221,7 @@ int classic_construct(int argc, char** argv) {
         "continue", index_params.continue_,
         "continue in existing output directory");
 
-    cp.add_size_t(
+    cp.add_unsigned(
         'T', "threads", index_params.num_threads,
         "number of threads to use, default: max cores");
 
@@ -243,7 +243,7 @@ int classic_construct(int argc, char** argv) {
     index_params.canonicalize = !no_canonicalize;
 
     // read file list
-    cobs::DocumentList filelist(input, StringToFileType(file_type));
+    cobs::DocumentList filelist(input, cobs::StringToFileType(file_type));
     print_document_list(filelist, index_params.term_size);
 
     cobs::classic_construct(filelist, out_file, tmp_path, index_params);
@@ -258,7 +258,7 @@ int classic_construct_random(int argc, char** argv) {
     cp.add_param_string(
         "out-file", out_file, "path to the output file");
 
-    size_t signature_size = 2 * 1024 * 1024;
+    uint64_t signature_size = 2 * 1024 * 1024;
     cp.add_bytes(
         's', "signature-size", signature_size,
         "number of bits of the signatures (vertical size), default: 2 Mi");
@@ -280,8 +280,8 @@ int classic_construct_random(int argc, char** argv) {
         'h', "num-hashes", num_hashes,
         "number of hash functions, default: 1");
 
-    size_t seed = std::random_device { } ();
-    cp.add_size_t("seed", seed, "random seed");
+    unsigned seed = std::random_device { } ();
+    cp.add_unsigned("seed", seed, "random seed");
 
     if (!cp.sort().process(argc, argv))
         return -1;
@@ -319,8 +319,7 @@ int compact_construct(int argc, char** argv) {
 
     std::string file_type = "any";
     cp.add_string(
-        "file-type", file_type,
-        "filter input documents by file type (any, text, cortex, fasta, etc)");
+        "file-type", file_type, s_help_file_type);
 
     cp.add_bytes(
         'm', "memory", index_params.mem_bytes,
@@ -342,7 +341,7 @@ int compact_construct(int argc, char** argv) {
         "term size (k-mer size), default: "
         + std::to_string(index_params.term_size));
 
-    cp.add_size_t(
+    cp.add_unsigned(
         'p', "page-size", index_params.page_size,
         "the page size of the compact the index, "
         "default: sqrt(#documents)");
@@ -360,7 +359,7 @@ int compact_construct(int argc, char** argv) {
         "continue", index_params.continue_,
         "continue in existing output directory");
 
-    cp.add_size_t(
+    cp.add_unsigned(
         'T', "threads", index_params.num_threads,
         "number of threads to use, default: max cores");
 
@@ -382,7 +381,7 @@ int compact_construct(int argc, char** argv) {
     index_params.canonicalize = !no_canonicalize;
 
     // read file list
-    cobs::DocumentList filelist(input, StringToFileType(file_type));
+    cobs::DocumentList filelist(input, cobs::StringToFileType(file_type));
     print_document_list(filelist, index_params.term_size);
 
     cobs::compact_construct(filelist, out_file, tmp_path, index_params);
@@ -417,69 +416,58 @@ int compact_construct_combine(int argc, char** argv) {
     return 0;
 }
 
-/******************************************************************************/
+int classic_combine(int argc, char** argv) {
+    tlx::CmdlineParser cp;
 
-static inline
-void process_query(
-    cobs::Search& s, double threshold, unsigned num_results,
-    const std::string& query_line, const std::string& query_file)
-{
-    std::vector<std::pair<uint16_t, std::string> > result;
+    cobs::ClassicIndexParameters index_params;
 
-    if (!query_line.empty()) {
-        s.search(query_line, result, threshold, num_results);
+    std::string in_dir;
+    cp.add_param_string(
+            "in-dir", in_dir, "path to the input directory");
 
-        for (const auto& res : result) {
-            std::cout << res.second << '\t' << res.first << '\n';
-        }
-    }
-    else if (!query_file.empty()) {
-        std::ifstream qf(query_file);
-        std::string line, query, comment;
+    std::string out_dir;
+    cp.add_param_string(
+            "out-dir", out_dir, "path to the output directory");
 
-        while (std::getline(qf, line)) {
-            if (line.empty())
-                continue;
+    std::string out_file;
+    cp.add_param_string(
+            "out-file", out_file, "path to the output file");
 
-            if (line[0] == '>' || line[0] == ';') {
-                if (!query.empty()) {
-                    // perform query
-                    s.search(query, result, threshold, num_results);
-                    std::cout << comment << '\t' << result.size() << '\n';
+    cp.add_bytes(
+            'm', "memory", index_params.mem_bytes,
+            "memory in bytes to use, default: " +
+            tlx::format_iec_units(index_params.mem_bytes));
 
-                    for (const auto& res : result) {
-                        std::cout << res.second << '\t' << res.first << '\n';
-                    }
-                }
+    cp.add_unsigned(
+            'T', "threads", index_params.num_threads,
+            "number of threads to use, default: max cores");
 
-                // clear and copy query comment
-                line[0] = '*';
-                query.clear();
-                comment = line;
-                continue;
-            }
-            else {
-                query += line;
-            }
-        }
+    cp.add_flag(
+            "keep-temporary", index_params.keep_temporary,
+            "keep temporary files during construction");
 
-        if (!query.empty()) {
-            // perform query
-            s.search(query, result, threshold, num_results);
-            std::cout << comment << '\t' << result.size() << '\n';
+    if (!cp.sort().process(argc, argv))
+        return -1;
 
-            for (const auto& res : result) {
-                std::cout << res.second << '\t' << res.first << '\n';
-            }
-        }
-    }
-    else {
-        die("Pass a verbatim query or a query file.");
-    }
+    cp.print_result(std::cerr);
 
-    s.timer().print("search");
+    cobs::fs::path tmp_path(out_dir);
+    cobs::fs::path f;
+    uint64_t i = 1;
+
+    cobs::fs::copy(in_dir, tmp_path / cobs::pad_index(i));
+
+    while(!cobs::classic_combine(tmp_path / cobs::pad_index(i), tmp_path / cobs::pad_index(i + 1),
+                                 f, index_params.mem_bytes, index_params.num_threads,
+                                 index_params.keep_temporary)) {
+        i++;
+    };
+    cobs::fs::rename(f, out_file);
+
+    return 0;
 }
 
+/******************************************************************************/
 int query(int argc, char** argv) {
     tlx::CmdlineParser cp;
 
@@ -509,115 +497,20 @@ int query(int argc, char** argv) {
         "load-complete", cobs::gopt_load_complete_index,
         "load complete index into RAM for batch queries");
 
-    cp.add_size_t(
+    cp.add_unsigned(
         'T', "threads", cobs::gopt_threads,
         "number of threads to use, default: max cores");
 
     if (!cp.sort().process(argc, argv))
         return -1;
 
-    if (index_files.size() != 1) {
-        die("Supply one index file, TODO: add support for multiple.");
+    std::vector<cobs::fs::path> index_paths;
+    for (const std::string &file : index_files) {
+      index_paths.push_back(cobs::fs::path(file));
     }
-    std::string index_file = index_files[0];
-
-    cobs::ClassicSearch s(index_file);
-    process_query(s, threshold, num_results, query, query_file);
-
-    return 0;
-}
-
-/******************************************************************************/
-// "Ranfold" Index Construction
-
-int ranfold_construct(int argc, char** argv) {
-    tlx::CmdlineParser cp;
-
-    std::string in_dir;
-    cp.add_param_string(
-        "in-dir", in_dir, "path to the input directory");
-
-    std::string out_file;
-    cp.add_param_string(
-        "out-file", out_file, "path to the output file");
-
-    if (!cp.sort().process(argc, argv))
-        return -1;
-
-    cp.print_result(std::cerr);
-
-    cobs::ranfold_index::construct(in_dir, out_file);
-
-    return 0;
-}
-
-int ranfold_construct_random(int argc, char** argv) {
-    tlx::CmdlineParser cp;
-
-    std::string out_file;
-    cp.add_param_string(
-        "out-file", out_file, "path to the output file");
-
-    size_t term_space = 2 * 1024 * 1024;
-    cp.add_bytes(
-        't', "term-space", term_space,
-        "size of term space for kmer signatures (vertical size), "
-        "default: " + tlx::format_iec_units(term_space));
-
-    unsigned num_term_hashes = 1;
-    cp.add_unsigned(
-        'T', "term-hashes", num_term_hashes,
-        "number of hash functions per term, default: 1");
-
-    size_t doc_space_bits = 16 * 1024;
-    cp.add_bytes(
-        'd', "doc-space-bits", doc_space_bits,
-        "number of bits in the document space (horizontal size), "
-        "default: " + tlx::format_iec_units(doc_space_bits));
-
-    unsigned num_doc_hashes = 2;
-    cp.add_unsigned(
-        'D', "doc-hashes", num_doc_hashes,
-        "number of hash functions per term, default: 2");
-
-    unsigned num_documents = 10000;
-    cp.add_unsigned(
-        'n', "num-documents", num_documents,
-        "number of random documents in index,"
-        " default: " + std::to_string(num_documents));
-
-    unsigned document_size = 1000000;
-    cp.add_unsigned(
-        'm', "document-size", document_size,
-        "number of random 31-mers in document,"
-        " default: " + std::to_string(document_size));
-
-    size_t seed = std::random_device { } ();
-    cp.add_size_t("seed", seed, "random seed");
-
-    if (!cp.sort().process(argc, argv))
-        return -1;
-
-    cp.print_result(std::cerr);
-
-    std::cerr << "Constructing ranfold index"
-              << ", term_space = " << term_space
-              << ", num_term_hashes = " << num_term_hashes
-              << ", doc_space_bits = " << doc_space_bits
-              << ", num_doc_hashes = " << num_doc_hashes
-              << ", num_documents = " << num_documents
-              << ", document_size = " << document_size
-              << ", result size = "
-              << tlx::format_iec_units(
-        (term_space * (doc_space_bits + 7) / 8))
-              << std::endl;
-
-    cobs::ranfold_index::construct_random(
-        out_file,
-        term_space, num_term_hashes,
-        doc_space_bits, num_doc_hashes,
-        num_documents, document_size,
-        seed);
+    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_paths);
+    cobs::ClassicSearch s(indices);
+    cobs::process_query(s, threshold, num_results, query, query_file);
 
     return 0;
 }
@@ -679,10 +572,17 @@ int print_kmers(int argc, char** argv) {
         return -1;
 
     std::vector<char> kmer_buffer(kmer_size);
-    for (size_t i = 0; i < query.size() - kmer_size; i++) {
-        auto kmer = cobs::canonicalize_kmer(
+    for (uint64_t i = 0; i < query.size() - kmer_size; i++) {
+        bool good = cobs::canonicalize_kmer(
             query.data() + i, kmer_buffer.data(), kmer_size);
-        std::cout << std::string(kmer, kmer_size) << '\n';
+
+        if (!good)
+            std::cout << "Invalid DNA base pair: "
+                      << std::string(query.data() + i, kmer_size)
+                      << std::endl;
+        else
+            std::cout << std::string(
+                kmer_buffer.data(), kmer_size) << '\n';
     }
 
     return 0;
@@ -704,20 +604,20 @@ void benchmark_fpr_run(const cobs::fs::path& p,
     ofs << "3" << std::endl;
     ofs.close();
 
-    std::vector<std::pair<uint16_t, std::string> > result;
-    for (size_t i = 0; i < warmup_queries.size(); i++) {
+    std::vector<cobs::SearchResult> result;
+    for (uint64_t i = 0; i < warmup_queries.size(); i++) {
         s.search(warmup_queries[i], result);
     }
     s.timer().reset();
 
     std::map<uint32_t, uint64_t> counts;
 
-    for (size_t i = 0; i < queries.size(); i++) {
+    for (uint64_t i = 0; i < queries.size(); i++) {
         s.search(queries[i], result);
 
         if (FalsePositiveDist) {
             for (const auto& r : result) {
-                counts[r.first]++;
+                counts[r.score]++;
             }
         }
     }
@@ -789,8 +689,8 @@ int benchmark_fpr(int argc, char** argv) {
         'd', "dist", fpr_dist,
         "calculate false positive distribution");
 
-    size_t seed = std::random_device { } ();
-    cp.add_size_t("seed", seed, "random seed");
+    unsigned seed = std::random_device { } ();
+    cp.add_unsigned("seed", seed, "random seed");
 
     if (!cp.sort().process(argc, argv))
         return -1;
@@ -799,11 +699,11 @@ int benchmark_fpr(int argc, char** argv) {
 
     std::vector<std::string> warmup_queries;
     std::vector<std::string> queries;
-    for (size_t i = 0; i < num_warmup; i++) {
+    for (uint64_t i = 0; i < num_warmup; i++) {
         warmup_queries.push_back(
             cobs::random_sequence_rng(num_kmers + 30, rng));
     }
-    for (size_t i = 0; i < num_queries; i++) {
+    for (uint64_t i = 0; i < num_queries; i++) {
         queries.push_back(
             cobs::random_sequence_rng(num_kmers + 30, rng));
     }
@@ -830,10 +730,9 @@ int generate_queries(int argc, char** argv) {
 
     std::string file_type = "any";
     cp.add_string(
-        "file-type", file_type,
-        "filter documents by file type (any, text, cortex, fasta, etc)");
+        "file-type", file_type, s_help_file_type);
 
-    cp.add_size_t(
+    cp.add_unsigned(
         'T', "threads", cobs::gopt_threads,
         "number of threads to use, default: max cores");
 
@@ -842,13 +741,13 @@ int generate_queries(int argc, char** argv) {
         'k', "term-size", term_size,
         "term size (k-mer size), default: 31");
 
-    size_t num_positive = 0;
-    cp.add_size_t(
+    unsigned num_positive = 0;
+    cp.add_unsigned(
         'p', "positive", num_positive,
         "pick this number of existing positive queries, default: 0");
 
-    size_t num_negative = 0;
-    cp.add_size_t(
+    unsigned num_negative = 0;
+    cp.add_unsigned(
         'n', "negative", num_negative,
         "construct this number of random non-existing negative queries, "
         "default: 0");
@@ -858,13 +757,13 @@ int generate_queries(int argc, char** argv) {
         'N', "true-negative", true_negatives,
         "check that negative queries actually are not in the documents (slow)");
 
-    size_t fixed_size = 0;
-    cp.add_size_t(
+    unsigned fixed_size = 0;
+    cp.add_unsigned(
         's', "size", fixed_size,
         "extend positive terms with random data to this size");
 
-    size_t seed = std::random_device { } ();
-    cp.add_size_t(
+    unsigned seed = std::random_device { } ();
+    cp.add_unsigned(
         'S', "seed", seed,
         "random seed");
 
@@ -876,12 +775,12 @@ int generate_queries(int argc, char** argv) {
     if (!cp.sort().process(argc, argv))
         return -1;
 
-    cobs::DocumentList filelist(path, StringToFileType(file_type));
+    cobs::DocumentList filelist(path, cobs::StringToFileType(file_type));
 
-    std::vector<size_t> terms_prefixsum;
+    std::vector<uint64_t> terms_prefixsum;
     terms_prefixsum.reserve(filelist.size());
-    size_t total_terms = 0;
-    for (size_t i = 0; i < filelist.size(); ++i) {
+    uint64_t total_terms = 0;
+    for (uint64_t i = 0; i < filelist.size(); ++i) {
         terms_prefixsum.push_back(total_terms);
         total_terms += filelist[i].num_terms(term_size);
     }
@@ -898,18 +797,18 @@ int generate_queries(int argc, char** argv) {
         // term string
         std::string term;
         // document index
-        size_t doc_index;
+        uint64_t doc_index;
         // term index inside document
-        size_t term_index;
+        uint64_t term_index;
     };
 
     // select random term ids for positive queries
-    std::vector<size_t> positive_indices;
+    std::vector<uint64_t> positive_indices;
     std::vector<Query> positives;
     {
         die_unless(total_terms >= num_positive);
 
-        std::unordered_set<size_t> positive_set;
+        std::unordered_set<uint64_t> positive_set;
         while (positive_set.size() < num_positive) {
             positive_set.insert(rng() % total_terms);
         }
@@ -926,14 +825,14 @@ int generate_queries(int argc, char** argv) {
     // generate random negative queries
     std::vector<std::string> negatives;
     std::mutex negatives_mutex;
-    std::unordered_map<std::string, std::vector<size_t> > negative_terms;
-    std::unordered_set<size_t> negative_hashes;
-    for (size_t t = 0; t < 1.5 * num_negative; ++t) {
+    std::unordered_map<std::string, std::vector<uint64_t> > negative_terms;
+    std::unordered_set<uint64_t> negative_hashes;
+    for (uint64_t t = 0; t < 1.5 * num_negative; ++t) {
         std::string neg = cobs::random_sequence_rng(fixed_size, rng);
         negatives.push_back(neg);
 
         // insert and hash all terms in the query
-        for (size_t i = 0; i + term_size <= neg.size(); ++i) {
+        for (uint64_t i = 0; i + term_size <= neg.size(); ++i) {
             std::string term = neg.substr(i, term_size);
             negative_terms[term].push_back(t);
             negative_hashes.insert(tlx::hash_djb2(term));
@@ -943,21 +842,21 @@ int generate_queries(int argc, char** argv) {
     // run over all documents and fetch positive queries
     cobs::parallel_for(
         0, filelist.size(), cobs::gopt_threads,
-        [&](size_t d) {
-            size_t index = terms_prefixsum[d];
+        [&](uint64_t d) {
+            uint64_t index = terms_prefixsum[d];
             // find starting iterator for positive_indices in this file
-            size_t pos_index = std::lower_bound(
+            uint64_t pos_index = std::lower_bound(
                 positive_indices.begin(), positive_indices.end(), index)
                                - positive_indices.begin();
-            size_t next_index =
+            uint64_t next_index =
                 pos_index < positive_indices.size() ?
-                positive_indices[pos_index] : size_t(-1);
-            if (next_index == size_t(-1) && !true_negatives)
+                positive_indices[pos_index] : uint64_t(-1);
+            if (next_index == uint64_t(-1) && !true_negatives)
                 return;
 
             filelist[d].process_terms(
                 term_size,
-                [&](const cobs::string_view& term) {
+                [&](const tlx::string_view& term) {
                     if (index == next_index) {
                         // store positive term
                         Query& q = positives[pos_index];
@@ -967,9 +866,9 @@ int generate_queries(int argc, char** argv) {
 
                         // extend positive term to term_size by padding
                         if (q.term.size() < fixed_size) {
-                            size_t padding = fixed_size - q.term.size();
-                            size_t front_padding = rng() % padding;
-                            size_t back_padding = padding - front_padding;
+                            uint64_t padding = fixed_size - q.term.size();
+                            uint64_t front_padding = rng() % padding;
+                            uint64_t back_padding = padding - front_padding;
 
                             q.term =
                                 cobs::random_sequence_rng(front_padding, rng) +
@@ -979,7 +878,7 @@ int generate_queries(int argc, char** argv) {
 
                         ++pos_index;
                         next_index = pos_index < positive_indices.size() ?
-                                     positive_indices[pos_index] : size_t(-1);
+                                     positive_indices[pos_index] : uint64_t(-1);
                     }
                     index++;
 
@@ -992,7 +891,7 @@ int generate_queries(int argc, char** argv) {
                             if (it != negative_terms.end()) {
                                 // clear negative query with term found
                                 LOG1 << "remove false negative: " << t;
-                                for (const size_t& i : it->second)
+                                for (const uint64_t& i : it->second)
                                     negatives[i].clear();
                                 negative_terms.erase(it);
                             }
@@ -1010,25 +909,25 @@ int generate_queries(int argc, char** argv) {
     std::vector<Query> queries = std::move(positives);
     queries.reserve(num_positive + num_negative);
 
-    size_t ni = 0;
+    uint64_t ni = 0;
     for (auto it = negatives.begin(); ni < num_negative; ++it) {
         if (it->empty())
             continue;
         Query q;
         q.term = std::move(*it);
-        q.doc_index = size_t(-1);
+        q.doc_index = uint64_t(-1);
         queries.emplace_back(q);
         ++ni;
     }
 
     std::shuffle(queries.begin(), queries.end(), rng);
 
-    size_t negative_count = 0;
+    uint64_t negative_count = 0;
 
     auto write_output =
         [&](std::ostream& os) {
             for (const Query& q : queries) {
-                if (q.doc_index != size_t(-1))
+                if (q.doc_index != uint64_t(-1))
                     os << ">doc:" << q.doc_index << ":term:" << q.term_index
                        << ":" << filelist[q.doc_index].name_ << '\n';
                 else
@@ -1046,6 +945,13 @@ int generate_queries(int argc, char** argv) {
     }
 
     return 0;
+}
+
+/******************************************************************************/
+
+int version(int argc, char** argv) {
+  std::cout << "COBS version " << VERSION << std::endl;
+  return 0;
 }
 
 /******************************************************************************/
@@ -1083,12 +989,8 @@ struct SubTool subtools[] = {
         "combines the classic indices in <in_dir> to form a compact index"
     },
     {
-        "ranfold-construct", &ranfold_construct, true,
-        "constructs a ranfold index from documents"
-    },
-    {
-        "ranfold-construct-random", &ranfold_construct_random, true,
-        "constructs a ranfold index with random content"
+            "classic-combine", &classic_combine, true,
+            "combines the classic indices in <in_dir>"
     },
     {
         "query", &query, true,
@@ -1110,24 +1012,27 @@ struct SubTool subtools[] = {
         "generate-queries", &generate_queries, true,
         "select queries randomly from documents"
     },
+    {
+      "version", &version, true, "prints version and exit"
+    },
     { nullptr, nullptr, true, nullptr }
 };
 
 int main_usage(const char* arg0) {
-    std::cout << "(Co)mpact (B)it-Sliced (S)ignature Index for Genome Search"
+    std::cout << "(Co)mpact (B)it-Sliced (S)ignature Index for Genome Search (version " << VERSION << ")"
               << std::endl << std::endl;
     std::cout << "Usage: " << arg0 << " <subtool> ..." << std::endl << std::endl
               << "Available subtools: " << std::endl;
 
     int shortlen = 0;
 
-    for (size_t i = 0; subtools[i].name; ++i)
+    for (uint64_t i = 0; subtools[i].name; ++i)
     {
         if (!subtools[i].shortline) continue;
         shortlen = std::max(shortlen, static_cast<int>(strlen(subtools[i].name)));
     }
 
-    for (size_t i = 0; subtools[i].name; ++i)
+    for (uint64_t i = 0; subtools[i].name; ++i)
     {
         if (subtools[i].shortline) continue;
         std::cout << "  " << subtools[i].name << std::endl;
@@ -1136,7 +1041,7 @@ int main_usage(const char* arg0) {
         std::cout << std::endl;
     }
 
-    for (size_t i = 0; subtools[i].name; ++i)
+    for (uint64_t i = 0; subtools[i].name; ++i)
     {
         if (!subtools[i].shortline) continue;
         std::cout << "  " << std::left << std::setw(shortlen + 2)
@@ -1158,7 +1063,7 @@ int main(int argc, char** argv) {
     if (argc < 2)
         return main_usage(argv[0]);
 
-    for (size_t i = 0; subtools[i].name; ++i)
+    for (uint64_t i = 0; subtools[i].name; ++i)
     {
         if (strcmp(subtools[i].name, argv[1]) == 0)
         {

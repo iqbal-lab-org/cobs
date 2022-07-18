@@ -68,7 +68,7 @@ void ClassicIndexHeader::read_file(std::istream& is,
                                    std::vector<uint8_t>& data) {
     is.exceptions(std::ios::eofbit | std::ios::failbit | std::ios::badbit);
     deserialize(is);
-    size_t size = get_stream_size(is);
+    uint64_t size = get_stream_size(is);
     data.resize(size);
     is.read(reinterpret_cast<char*>(data.data()), size);
 }

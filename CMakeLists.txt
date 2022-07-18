@@ -42,6 +42,9 @@ if(COBS_EXECUTABLE_SUFFIX)
   set(CMAKE_EXECUTABLE_SUFFIX "${COBS_EXECUTABLE_SUFFIX}")
 endif()
 
+option(COBS_USE_GCOV
+  "Compile and run tests with gcov for coverage analysis." OFF)
+
 ################################################################################
 ### Compiler Flags
 
@@ -51,14 +54,14 @@ set(COBS_INCLUDE_DIRS "")
 set(COBS_LINK_LIBRARIES "")
 
 # enable more warnings
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wpedantic -Wall")
 
 # use C++17
 set(CMAKE_CXX_STANDARD 17)
 
-# enable warnings
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -march=native -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -march=native -fPIC")
+# additional default flags
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
 
 # with run-time STL checks
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_DEBUG")
@@ -76,11 +79,68 @@ endif()
 
 message(STATUS "COBS CMAKE_CXX_FLAGS:" ${CMAKE_CXX_FLAGS})
 
+###############################################################################
+# enable gcov coverage analysis with gcc
+
+if(COBS_USE_GCOV)
+  # find programs
+  find_program(GENHTML genhtml)
+  find_program(LCOV lcov)
+
+  if(NOT LCOV OR NOT GENHTML)
+    message(SEND_ERROR "Coverage analysis requires lcov and genhtml programs.")
+  else()
+    message(STATUS "Found lcov: ${LCOV}")
+    message(STATUS "Found genhtml: ${GENHTML}")
+  endif()
+
+  # add coverage anaylsis compile and link flags
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fprofile-arcs -ftest-coverage")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+
+  # add cached variable containing parameters for lcov/genhtml
+  set(LCOV_FLAGS "" CACHE STRING "parameters for lcov")
+  set(GENHTML_FLAGS --legend --no-branch-coverage
+    CACHE STRING "parameters for genhtml")
+
+  # custom target to run before tests
+  add_custom_target(lcov-reset
+    COMMAND ${LCOV} -q --directory ${CMAKE_BINARY_DIR} --zerocounters
+    COMMENT "Resetting code coverage counters")
+
+  # custom lcov target to run tests
+  add_custom_target(lcov-runtests
+    COMMAND ${CMAKE_CTEST_COMMAND} \${ARGS} || true
+    DEPENDS lcov-reset
+    COMMENT "Running all unit tests")
+
+  # get git version description
+  execute_process(COMMAND git describe --tags
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    OUTPUT_VARIABLE GITDESC
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+  # command sequence to gather, clean and generate HTML coverage report
+  add_custom_target(lcov-html
+    COMMAND ${LCOV} -q --directory . --capture --output-file lcov.info
+    COMMAND ${LCOV} -q --remove lcov.info '/usr/*' '*/extlib/*' ${LCOV_FLAGS} --output-file lcov-clean.info
+    COMMAND ${GENHTML} -q -o coverage --title "cobs ${GITDESC}" --prefix ${PROJECT_SOURCE_DIR} ${GENHTML_FLAGS} lcov-clean.info
+    DEPENDS lcov-runtests
+    COMMENT "Capturing code coverage counters and create HTML coverage report"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+  # top-level target to run tests and generate coverage report
+  add_custom_target(test-coverage
+    COMMENT "Generate HTML coverage report "
+    DEPENDS lcov-html)
+
+endif(COBS_USE_GCOV)
+
 ################################################################################
 ### Find Required Libraries
 
 ### find pthreads ###
-
 find_package(Threads REQUIRED)
 set(COBS_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${COBS_LINK_LIBRARIES})
 if(CMAKE_USE_PTHREADS_INIT)
@@ -88,36 +148,32 @@ if(CMAKE_USE_PTHREADS_INIT)
 endif()
 
 ### use Google Test ###
-
 add_subdirectory(extlib/googletest)
-
 enable_testing()
 include(GoogleTest)
 
 ### use xxHash ###
-
 add_subdirectory(extlib/xxhash/cmake_unofficial)
 set(COBS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/extlib/xxhash ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES xxhash ${COBS_LINK_LIBRARIES})
 
 ### use ZLIB ###
-
 find_package(ZLIB REQUIRED)
 set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
 
-### use Boost filesystem ###
-
-find_package(Boost 1.42.0 COMPONENTS system filesystem)
-if(${Boost_FOUND})
+### check if we should use BOOST ###
+if(BOOST)
+  set(Boost_USE_STATIC_LIBS   ON)
+  find_package(Boost 1.72.0 COMPONENTS system filesystem)
   set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
   set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
+  add_compile_definitions(COBS_USE_BOOST)
+else()
+  set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
 endif()
 
-set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
-
 ### use TLX ###
-
 add_subdirectory(extlib/tlx)
 set(COBS_LINK_LIBRARIES tlx ${COBS_LINK_LIBRARIES})
 
@@ -137,3 +193,5 @@ add_subdirectory(tests)
 add_subdirectory(python)
 
 ################################################################################
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)

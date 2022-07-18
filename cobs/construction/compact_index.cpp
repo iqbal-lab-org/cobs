@@ -26,7 +26,7 @@ namespace cobs {
 
 static inline
 bool combine_classic_index(const fs::path& in_dir, const fs::path& out_dir,
-                           size_t mem_bytes, size_t num_threads,
+                           uint64_t mem_bytes, uint64_t num_threads,
                            bool keep_temporary) {
     bool all_combined = true;
     fs::path result_file;
@@ -59,14 +59,14 @@ void compact_combine_into_compact(
                  });
     std::sort(paths.begin(), paths.end());
 
-    unsigned term_size = 0;
+    uint64_t term_size = 0;
     uint8_t canonicalize = 0;
     std::vector<CompactIndexHeader::parameter> parameters;
     std::vector<std::string> file_names;
 
     LOG1 << "Combine Compact Index from " << paths.size() << " Classic Indices";
 
-    for (size_t i = 0; i < paths.size(); i++) {
+    for (uint64_t i = 0; i < paths.size(); i++) {
         auto h = deserialize_header<ClassicIndexHeader>(paths[i]);
         parameters.push_back({ h.signature_size_, h.num_hashes_ });
         file_names.insert(file_names.end(),
@@ -115,7 +115,7 @@ void compact_combine_into_compact(
         }
         else {
             // row_size needs to be padded to page_size
-            size_t batch_size = memory / 2 / page_size;
+            uint64_t batch_size = memory / 2 / page_size;
 
             uint64_t data_size = get_stream_size(ifs);
             batch_size = std::min(
@@ -128,15 +128,15 @@ void compact_combine_into_compact(
 
             while (data_size > 0) {
                 t.active("read");
-                size_t this_batch = std::min(batch_size, data_size / row_size);
+                uint64_t this_batch = std::min(batch_size, data_size / row_size);
                 ifs.read(buffer.data(), this_batch * row_size);
                 die_unequal(this_batch * row_size,
-                            static_cast<size_t>(ifs.gcount()));
+                            static_cast<uint64_t>(ifs.gcount()));
                 data_size -= this_batch * row_size;
 
                 t.active("expand");
                 // expand each row_size to page_size, start at the back
-                for (size_t b = this_batch; b != 0; ) {
+                for (uint64_t b = this_batch; b != 0; ) {
                     --b;
 
                     std::copy_backward(
@@ -170,10 +170,10 @@ void compact_combine_into_compact(
 
 void compact_construct(DocumentList doc_list, const fs::path& index_file,
                        fs::path tmp_path, CompactIndexParameters params) {
-    size_t iteration = 1;
+    uint64_t iteration = 1;
 
     // check output file
-    if (!tlx::ends_with(index_file, CompactIndexHeader::file_extension)) {
+    if (!tlx::ends_with(index_file.string(), CompactIndexHeader::file_extension)) {
         die("Error: classic COBS index file must end with "
             << CompactIndexHeader::file_extension);
     }
@@ -183,14 +183,14 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
 
     if (params.page_size == 0) {
         params.page_size = tlx::round_up_to_power_of_two(
-            static_cast<size_t>(std::sqrt(doc_list.size() / 8)));
+            static_cast<uint64_t>(std::sqrt(doc_list.size() / 8)));
         params.page_size = std::max<uint64_t>(params.page_size, 8);
         params.page_size = std::min<uint64_t>(params.page_size, 4096);
     }
 
-    size_t num_pages = tlx::div_ceil(doc_list.size(), 8 * params.page_size);
+    uint64_t num_pages = tlx::div_ceil(doc_list.size(), 8 * params.page_size);
 
-    size_t num_threads = params.num_threads;
+    uint64_t num_threads = params.num_threads;
     if (num_threads > num_pages) {
         // use div_floor() instead
         num_threads = doc_list.size() / (8 * params.page_size);
@@ -198,7 +198,7 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
     if (num_threads == 0) num_threads = 1;
 
     // check output and maybe clobber
-    if (!tlx::ends_with(index_file, CompactIndexHeader::file_extension)) {
+    if (!tlx::ends_with(index_file.string(), CompactIndexHeader::file_extension)) {
         die("Error: classic COBS index file must end with "
             << CompactIndexHeader::file_extension);
     }
@@ -245,20 +245,20 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
          << "  continue_: " << unsigned(params.continue_) << '\n'
          << "  keep_temporary: " << unsigned(params.keep_temporary);
 
-    size_t total_size = 0;
+    uint64_t total_size = 0;
 
     doc_list.process_batches(
         8 * params.page_size,
-        [&](size_t /* batch_num */, const std::vector<DocumentEntry>& files,
+        [&](uint64_t /* batch_num */, const std::vector<DocumentEntry>& files,
             fs::path /* out_file */) {
 
-            size_t max_doc_size = 0;
+            uint64_t max_doc_size = 0;
             for (const DocumentEntry& de : files) {
                 max_doc_size = std::max(
                     max_doc_size, de.num_terms(params.term_size));
             }
 
-            size_t signature_size = calc_signature_size(
+            uint64_t signature_size = calc_signature_size(
                 max_doc_size, params.num_hashes, params.false_positive_rate);
 
             total_size += params.page_size * signature_size;
@@ -269,19 +269,19 @@ void compact_construct(DocumentList doc_list, const fs::path& index_file,
     // process batches and create classic indexes for each batch
     doc_list.process_batches_parallel(
         8 * params.page_size, num_threads,
-        [&](size_t batch_num, const std::vector<DocumentEntry>& files,
+        [&](uint64_t batch_num, const std::vector<DocumentEntry>& files,
             fs::path /* out_file */) {
 
-            size_t max_doc_size = 0;
+            uint64_t max_doc_size = 0;
             for (const DocumentEntry& de : files) {
                 max_doc_size = std::max(
                     max_doc_size, de.num_terms(params.term_size));
             }
 
-            size_t signature_size = calc_signature_size(
+            uint64_t signature_size = calc_signature_size(
                 max_doc_size, params.num_hashes, params.false_positive_rate);
 
-            size_t docsize_roundup = tlx::round_up(files.size(), 8);
+            uint64_t docsize_roundup = tlx::round_up(files.size(), 8);
 
             if (max_doc_size == 0)
                 return;

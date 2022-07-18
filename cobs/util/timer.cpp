@@ -22,7 +22,7 @@ static std::mutex s_timer_add_mutex;
 
 Timer::Entry& Timer::find_or_create(const char* name) {
     uint32_t h = tlx::hash_djb2(name);
-    for (size_t i = 0; i < timers_.size(); ++i) {
+    for (uint64_t i = 0; i < timers_.size(); ++i) {
         if (timers_[i].hash == h && strcmp(timers_[i].name, name) == 0)
             return timers_[i];
     }

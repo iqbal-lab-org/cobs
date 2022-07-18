@@ -17,6 +17,12 @@ file(GLOB COBS_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/util/*.[ch]pp
   )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    list(REMOVE_ITEM COBS_SOURCES
+            util/aio.hpp util/aio.cpp
+            query/compact_index/aio_search_file.hpp query/compact_index/aio_search_file.cpp)
+endif()
+
 add_library(cobs_static STATIC ${COBS_SOURCES})
 target_compile_definitions(cobs_static PUBLIC ${COBS_DEFINITIONS})
 target_include_directories(cobs_static PUBLIC ${PROJECT_SOURCE_DIR})

@@ -17,7 +17,7 @@ const std::string CompactIndexHeader::file_extension = ".cobs_compact";
 CompactIndexHeader::CompactIndexHeader(uint64_t page_size)
     : page_size_(page_size) { }
 
-size_t CompactIndexHeader::padding_size(uint64_t curr_stream_pos) const {
+uint64_t CompactIndexHeader::padding_size(uint64_t curr_stream_pos) const {
     return (page_size_ - ((curr_stream_pos + CompactIndexHeader::magic_word.size()) % page_size_)) % page_size_;
 }
 
@@ -70,8 +70,8 @@ void CompactIndexHeader::read_file(std::istream& is,
     deserialize(is);
     data.clear();
     data.resize(parameters_.size());
-    for (size_t i = 0; i < parameters_.size(); i++) {
-        size_t data_size = page_size_ * parameters_[i].signature_size;
+    for (uint64_t i = 0; i < parameters_.size(); i++) {
+        uint64_t data_size = page_size_ * parameters_[i].signature_size;
         std::vector<uint8_t> d(data_size);
         is.read(reinterpret_cast<char*>(d.data()), data_size);
         data[i] = std::move(d);

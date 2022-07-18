@@ -20,12 +20,15 @@
 #include <cobs/util/parallel_for.hpp>
 
 #include <algorithm>
+#include <fstream>
 #include <iomanip>
 
 #include <tlx/logger.hpp>
 #include <tlx/string/ends_with.hpp>
 
 namespace cobs {
+
+/******************************************************************************/
 
 enum class FileType {
     //! Accept any supported file types in dir scan
@@ -44,7 +47,13 @@ enum class FileType {
     FastaMulti,
     //! FastQ multi-file, parsed as multiple documents
     FastqMulti,
+    //! Special filelist file type (cannot actually be a document)
+    List,
 };
+
+FileType StringToFileType(std::string& s);
+
+/******************************************************************************/
 
 /*!
  * DocumentEntry specifies a document or subdocument which can deliver a set of
@@ -58,13 +67,13 @@ struct DocumentEntry {
     //! name of the document
     std::string name_;
     //! size of the document in bytes
-    size_t size_;
+    uint64_t size_;
     //! subdocument index (for Multifile FASTA, FASTQ, etc)
-    size_t subdoc_index_ = 0;
+    uint64_t subdoc_index_ = 0;
     //! fixed term (term) size or zero
-    size_t term_size_ = 0;
+    uint64_t term_size_ = 0;
     //! number of terms if fixed size
-    size_t term_count_ = 0;
+    uint64_t term_count_ = 0;
 
     //! default sort operator
     bool operator < (const DocumentEntry& b) const {
@@ -73,7 +82,7 @@ struct DocumentEntry {
     }
 
     //! calculate number of terms in file
-    size_t num_terms(size_t k) const {
+    uint64_t num_terms(uint64_t k) const {
         if (type_ == FileType::Text) {
             return size_ < k ? 0 : size_ - k + 1;
         }
@@ -103,7 +112,7 @@ struct DocumentEntry {
 
     //! process terms
     template <typename Callback>
-    void process_terms(unsigned term_size, Callback callback) const {
+    void process_terms(uint64_t term_size, Callback callback) const {
         if (type_ == FileType::Text) {
             TextFile text(path_);
             text.process_terms(term_size, callback);
@@ -123,7 +132,7 @@ struct DocumentEntry {
 
             for (uint64_t j = 0; j < doc.data().size(); j++) {
                 doc.data()[j].to_string(&term);
-                callback(term);
+                callback(tlx::string_view(term));
             }
         }
         else if (type_ == FileType::Fasta) {
@@ -194,6 +203,8 @@ public:
             return (ft == FileType::FastaMulti);
         case FileType::FastqMulti:
             return (ft == FileType::FastqMulti);
+        case FileType::List:
+            return (ft == FileType::List);
         }
         return false;
     }
@@ -214,7 +225,15 @@ public:
         else if (tlx::ends_with(spath, ".fa") ||
                  tlx::ends_with(spath, ".fa.gz") ||
                  tlx::ends_with(spath, ".fasta") ||
-                 tlx::ends_with(spath, ".fasta.gz")) {
+                 tlx::ends_with(spath, ".fasta.gz") ||
+                 tlx::ends_with(spath, ".fna") ||
+                 tlx::ends_with(spath, ".fna.gz") ||
+                 tlx::ends_with(spath, ".ffn") ||
+                 tlx::ends_with(spath, ".ffn.gz") ||
+                 tlx::ends_with(spath, ".faa") ||
+                 tlx::ends_with(spath, ".faa.gz") ||
+                 tlx::ends_with(spath, ".frn") ||
+                 tlx::ends_with(spath, ".frn.gz")){
             return FileType::Fasta;
         }
         else if (tlx::ends_with(spath, ".fq") ||
@@ -228,6 +247,9 @@ public:
         }
         else if (tlx::ends_with(spath, ".mfastq")) {
             return FileType::FastqMulti;
+        }
+        else if (tlx::ends_with(spath, ".list")) {
+            return FileType::List;
         }
         else {
             return FileType::Any;
@@ -266,7 +288,7 @@ public:
             de.name_ = dh.name();
             de.size_ = fs::file_size(path);
             // calculate number of k-mers from file size, k-mers are bit encoded
-            size_t size = get_stream_size(is);
+            uint64_t size = get_stream_size(is);
             de.term_size_ = dh.kmer_size();
             de.term_count_ = size / ((de.term_size_ + 3) / 4);
             return DocumentEntryList({ de });
@@ -284,7 +306,7 @@ public:
         else if (ft == FileType::FastaMulti) {
             DocumentEntryList list;
             FastaMultifile mfasta(path.string());
-            for (size_t i = 0; i < mfasta.num_documents(); ++i) {
+            for (uint64_t i = 0; i < mfasta.num_documents(); ++i) {
                 DocumentEntry de;
                 de.path_ = path.string();
                 de.type_ = FileType::FastaMulti;
@@ -307,7 +329,7 @@ public:
             return DocumentEntryList({ de });
         }
         else {
-            die("DocumentList: unknown file to add: " << path);
+            die("DocumentList: unknown document file to add: " << path);
         }
     }
 
@@ -317,21 +339,46 @@ public:
         std::move(l.begin(), l.end(), std::back_inserter(list_));
     }
 
-    //! scan path recursively and add files of given filter type
+    //! scan path recursively and add files of given filter type. if the root
+    //! path is a .list file, it is read and all files are added to the
+    //! DocumentList.
     void add_recursive(const fs::path& root, FileType filter = FileType::Any)
     {
-        std::vector<fs::path> paths;
+        std::vector<std::string> paths;
         if (fs::is_directory(root)) {
             fs::recursive_directory_iterator it(root), end;
             while (it != end) {
                 if (accept(*it, filter)) {
-                    paths.emplace_back(*it);
+                    paths.emplace_back(fs::path(*it).string());
                 }
                 ++it;
             }
         }
+        else if (tlx::ends_with(root.string(), ".list") ||
+                 filter == FileType::List)
+        {
+            std::ifstream in(root.string());
+            if (!in.good())
+                die("DocumentList: could not open .list file: " << root);
+
+            fs::path root_parent = root.parent_path();
+            std::string line;
+            while (std::getline(in, line)) {
+                // skip empty lines and comment lines
+                if (line.size() == 0 || line[0] == '#')
+                    continue;
+
+                fs::path file(line);
+                if (!file.is_absolute()) {
+                    // if path line is not absolute, add parent path of the
+                    // list file.
+                    file = root_parent / file;
+                }
+                paths.emplace_back(file.string());
+            }
+        }
         else if (fs::is_regular_file(root)) {
-            paths.emplace_back(root);
+            paths.emplace_back(root.string());
         }
 
         std::sort(paths.begin(), paths.end());
@@ -341,10 +388,11 @@ public:
         std::mutex list_mutex;
         parallel_for(
             0, paths.size(), gopt_threads,
-            [&](size_t i) {
+            [&](uint64_t i) {
                 try {
-                    DocumentEntryList l = load(paths[i]);
+                    DocumentEntryList l = load(fs::path(paths[i]));
 
+                    // append the list of documents loaded from the path
                     std::unique_lock<std::mutex> lock(list_mutex);
                     std::move(l.begin(), l.end(), std::back_inserter(list_));
                 }
@@ -362,10 +410,10 @@ public:
     const DocumentEntryList& list() const { return list_; }
 
     //! return length of list
-    size_t size() const { return list_.size(); }
+    uint64_t size() const { return list_.size(); }
 
     //! return DocumentEntry index
-    const DocumentEntry& operator [] (size_t i) const {
+    const DocumentEntry& operator [] (uint64_t i) const {
         return list_.at(i);
     }
 
@@ -388,18 +436,18 @@ public:
 
     //! process each file
     void process_each(void (*func)(const DocumentEntry&)) const {
-        for (size_t i = 0; i < list_.size(); i++) {
+        for (uint64_t i = 0; i < list_.size(); i++) {
             func(list_[i]);
         }
     }
 
     //! process files in batch with output file generation
     template <typename Functor>
-    void process_batches(size_t batch_size, Functor func) const {
+    void process_batches(uint64_t batch_size, Functor func) const {
         std::string first_filename, last_filename;
-        size_t batch_num = 0;
+        uint64_t batch_num = 0;
         DocumentEntryList batch;
-        for (size_t i = 0; i < list_.size(); i++) {
+        for (uint64_t i = 0; i < list_.size(); i++) {
             std::string filename = list_[i].name_;
             if (first_filename.empty()) {
                 first_filename = filename;
@@ -425,7 +473,7 @@ public:
 
     //! process files in batch with output file generation
     template <typename Functor>
-    void process_batches_parallel(size_t batch_size, size_t num_threads,
+    void process_batches_parallel(uint64_t batch_size, uint64_t num_threads,
                                   Functor func) const {
         struct Batch {
             DocumentEntryList batch;
@@ -434,9 +482,9 @@ public:
         std::vector<Batch> batch_list;
 
         std::string first_filename, last_filename;
-        size_t batch_num = 0;
+        uint64_t batch_num = 0;
         DocumentEntryList batch;
-        for (size_t i = 0; i < list_.size(); i++) {
+        for (uint64_t i = 0; i < list_.size(); i++) {
             std::string filename = list_[i].name_;
             if (first_filename.empty()) {
                 first_filename = filename;
@@ -460,7 +508,7 @@ public:
 
         parallel_for(
             0, batch_list.size(), num_threads,
-            [&](size_t i) {
+            [&](uint64_t i) {
                 func(i, batch_list[i].batch, batch_list[i].out_file);
             });
     }
