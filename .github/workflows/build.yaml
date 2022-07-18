@@ -65,7 +65,8 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          brew install cmake boost@1.76 libomp
+          brew install cmake boost@1.76
+          brew reinstall libomp
 
       - name: Check out code for the build
         uses: actions/checkout@v2
@@ -76,6 +77,8 @@ jobs:
         run: |
           mkdir build
           cd build
+          export LDFLAGS="-L/usr/local/opt/boost@1.76/lib"
+          export CPPFLAGS="-I/usr/local/opt/boost@1.76/include"
           cmake -DBOOST=1 ..
           make
           make test
