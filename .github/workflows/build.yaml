@@ -75,6 +75,7 @@ jobs:
 
       - name: Build and test
         run: |         
+          ls /usr/local/Cellar/libomp/14.0.6/*
           # set up some variables so that CMake can find boost
           export BOOST_INCLUDE_DIR="/usr/local/opt/boost@1.76/include"
           export BOOST_LIBRARY_DIR="/usr/local/opt/boost@1.76/lib"
