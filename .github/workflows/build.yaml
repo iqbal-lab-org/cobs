@@ -65,7 +65,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          brew install cmake boost@1.76 llvm
+          brew install cmake boost@1.76
 
       - name: Check out code for the build
         uses: actions/checkout@v2
@@ -82,6 +82,6 @@ jobs:
           
           mkdir build
           cd build
-          cmake -DBOOST=1 ..
+          cmake -DBOOST=1 -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
           make
           make test
