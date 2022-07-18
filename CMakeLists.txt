@@ -141,11 +141,11 @@ endif(COBS_USE_GCOV)
 ### Find Required Libraries
 
 ### find pthreads ###
-find_package(Threads REQUIRED)
-set(COBS_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${COBS_LINK_LIBRARIES})
-if(CMAKE_USE_PTHREADS_INIT)
-  set(COBS_LINK_LIBRARIES pthread ${COBS_LINK_LIBRARIES})
-endif()
+#find_package(Threads REQUIRED)
+#set(COBS_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${COBS_LINK_LIBRARIES})
+#if(CMAKE_USE_PTHREADS_INIT)
+#  set(COBS_LINK_LIBRARIES pthread ${COBS_LINK_LIBRARIES})
+#endif()
 
 ### use Google Test ###
 add_subdirectory(extlib/googletest)
