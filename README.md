@@ -44,6 +44,8 @@ If you use COBS in an academic context or publication, please cite our paper
 
 COBS requires CMake, a C++17 compiler or the Boost.Filesystem library.
 
+## Linux
+
 To download and install COBS run:
 ```
 git clone --recursive https://github.com/bingmann/cobs.git
@@ -54,14 +56,40 @@ make -j4
 ```
 and optionally run `make test` to check the build.
 
-### OS X compilation
+## OS X compilation
 
-If the above does not work and you are using `OS X`, install `gcc` and `g++` and try switching the `cmake` command to:
-```
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
-```
+### Using `gcc`
 
-On `OS X`, `COBS` was tested with `cmake v3.22.3`, `make v3.81`, `gcc/g++-11 v11.2.0`.
+1. Install `gcc-11` or more recent: `brew install gcc@11`
+2. Compile COBS: `cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..`
+
+### Using `clang`:
+
+1. Install `boost-1.76`: `brew install boost@1.76`
+2. Compile COBS with boost: `cmake -DBOOST=1 ..`
+
+## Troubleshooting
+
+Several issues might arise from your specific configuration.
+
+### Problems with openMP on Mac OS X
+
+If installing openMP does not work, add `-DNOOPENMP=1` argument to the `cmake` command.
+
+### Problems with python bindings
+
+Skip python bindings compilation by adding `-DSKIP_PYTHON=1` argument to the `cmake` command.
+
+### Problems with finding boost
+
+Define boost env variables and then compile:
+```
+export BOOST_INCLUDE_DIR="<boost_root>/include"
+export BOOST_LIBRARY_DIR="<boost_root>/lib"
+export CXXFLAGS="-DUSE_BOOST -I${BOOST_INCLUDE_DIR} -L${BOOST_LIBRARY_DIR}"
+export LDFLAGS="-L${BOOST_LIBRARY_DIR} -lboost_filesystem -lboost_system"
+cmake -DBOOST=1  ..
+```
 
 ## Building an Index
 

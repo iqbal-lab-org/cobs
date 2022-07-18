@@ -212,7 +212,7 @@ TEST_F(compact_index_query, false_positive_mmap) {
     }
 
     for (auto& np : num_positive) {
-        ASSERT_LE(np.second, 1070U);
+        ASSERT_LE(np.second, 1074U);
     }
 }
 

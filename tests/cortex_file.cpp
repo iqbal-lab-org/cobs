@@ -42,7 +42,7 @@ TEST(cortex, process_kmers) {
     std::sort(kmer_list.begin(), kmer_list.end());
 
     // compare with ground truth
-    std::ifstream ifs(compare_document);
+    std::ifstream ifs(compare_document.string());
     std::string line;
     size_t i = 0;
     while (std::getline(ifs, line)) {
@@ -55,7 +55,7 @@ TEST(cortex, sample1) {
     std::string line;
 
     cobs::CortexFile ctx31(in_dir / "sample1-k31.ctx");
-    std::ifstream txt31(in_dir / "sample1-k31.txt");
+    std::ifstream txt31((in_dir / "sample1-k31.txt").string());
     ctx31.process_terms(
         31,
         [&](const tlx::string_view& v) {
@@ -65,7 +65,7 @@ TEST(cortex, sample1) {
     ASSERT_FALSE(std::getline(txt31, line));
 
     cobs::CortexFile ctx19(in_dir / "sample1-k19.ctx");
-    std::ifstream txt19(in_dir / "sample1-k19.txt");
+    std::ifstream txt19((in_dir / "sample1-k19.txt").string());
     ctx19.process_terms(
         19,
         [&](const tlx::string_view& v) {
@@ -75,7 +75,7 @@ TEST(cortex, sample1) {
     ASSERT_FALSE(std::getline(txt31, line));
 
     cobs::CortexFile ctx15(in_dir / "sample1-k15.ctx");
-    std::ifstream txt15(in_dir / "sample1-k15.txt");
+    std::ifstream txt15((in_dir / "sample1-k15.txt").string());
     ctx15.process_terms(
         15,
         [&](const tlx::string_view& v) {

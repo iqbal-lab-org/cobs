@@ -57,7 +57,7 @@ public:
 };
 
 static inline std::vector<std::shared_ptr<cobs::IndexSearchFile> > get_cobs_indexes_given_files (
-  const std::vector<std::string> &index_files
+  const std::vector<fs::path> &index_files
   ) {
   std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices;
 

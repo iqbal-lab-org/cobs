@@ -41,29 +41,29 @@ TEST_F(mof_integration, classic_construct_mof_tests) {
     cobs::classic_construct(filelist, cobs_index_filepath,
                             work_dir / "cobs_indexes" / bacteria / "temp", index_params);
 
-    assert_equals_files(cobs_index_filepath, input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic"));
+    assert_equals_files_with_paths(cobs_index_filepath, input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic"));
   }
 }
 
 
 TEST_F(mof_integration, queries__mof_tests) {
   for (const char* bacteria : species) {
-    std::vector<std::string> index_files{input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic")};
+    std::vector<fs::path> index_files{input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic")};
     std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_files);
     cobs::ClassicSearch s(indices);
 
     for (const char* query_length : query_lengths) {
-      std::string query_file = input_dir / (std::string(bacteria) + "_queries.query_length_" + query_length + ".fa");
+      fs::path query_file = input_dir / (std::string(bacteria) + "_queries.query_length_" + query_length + ".fa");
       auto query_out_filepath = work_dir / "query_out" / bacteria / query_length / "query.out";
       fs::create_directories(query_out_filepath.parent_path());
       std::ofstream query_out_fh(query_out_filepath.string());
 
-      cobs::process_query(s, 0.80000000000000004, 0, "", query_file, query_out_fh);
+      cobs::process_query(s, 0.80000000000000004, 0, "", query_file.string(), query_out_fh);
 
       query_out_fh.close();
-      assert_equals_files(
-        (input_dir / (std::string(bacteria)+".query_results.query_length_"+query_length+".no_load_complete.txt")).string(),
-        query_out_filepath.string());
+      assert_equals_files_with_paths(
+        input_dir / (std::string(bacteria)+".query_results.query_length_"+query_length+".no_load_complete.txt"),
+        query_out_filepath);
     }
   }
 }

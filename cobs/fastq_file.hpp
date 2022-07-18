@@ -30,8 +30,10 @@ namespace cobs {
 class FastqFile
 {
 public:
-    FastqFile(std::string path, bool use_cache = true) : path_(path) {
-        is_.open(path);
+    FastqFile(const fs::path &path, bool use_cache = true) : FastqFile(path.string(), use_cache) {}
+
+    FastqFile(const std::string &path, bool use_cache = true) : path_(path) {
+        is_.open(path_);
         die_unless(is_.good());
 
         if (!use_cache || gopt_disable_cache) {

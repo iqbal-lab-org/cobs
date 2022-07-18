@@ -16,11 +16,14 @@
 #include <cobs/query/classic_search.hpp>
 #include <cobs/query/compact_index/mmap_search_file.hpp>
 #include <cobs/util/query.hpp>
+#include <cobs/util/fs.hpp>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <string>
 #include <tlx/string/ssprintf.hpp>
 #include <vector>
+
+using namespace cobs;
 
 static inline
 void assert_equals_files(const std::string& f1, const std::string& f2) {
@@ -36,6 +39,11 @@ void assert_equals_files(const std::string& f1, const std::string& f2) {
     for (size_t i = 0; i < v1.size(); i++) {
         ASSERT_EQ(v1[i], v2[i]);
     }
+}
+
+static inline
+void assert_equals_files_with_paths(const fs::path& f1, const fs::path& f2) {
+  return assert_equals_files(f1.string(), f2.string());
 }
 
 //! Generate documents from a (random) query sequence
@@ -86,7 +94,8 @@ generate_documents_one(const std::string& query, size_t num_documents = 33) {
 static inline
 void generate_test_case(std::vector<cobs::KMerBuffer<31> > documents,
                         std::string prefix,
-                        const std::string& out_dir) {
+                        const fs::path& out_dir_path) {
+    std::string out_dir = out_dir_path.string();
     for (size_t i = 0; i < documents.size(); i++) {
         std::string file_name = prefix + "document_" + cobs::pad_index(i);
         documents[i].serialize(

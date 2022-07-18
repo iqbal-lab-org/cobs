@@ -31,6 +31,8 @@ namespace cobs {
 class CortexFile
 {
 public:
+    CortexFile(const fs::path &path) : CortexFile(path.string()) {}
+
     CortexFile(std::string path) {
         is_.open(path);
         die_unless(is_.good());

@@ -60,8 +60,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wpedantic -Wall")
 set(CMAKE_CXX_STANDARD 17)
 
 # additional default flags
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+if(NOOPENMP)
+  message(WARNING "COMPILING WITHOUT OPENMP!")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+endif()
 
 # with run-time STL checks
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_DEBUG")
@@ -141,6 +147,13 @@ endif(COBS_USE_GCOV)
 ### Find Required Libraries
 
 ### find pthreads ###
+if(APPLE)
+  set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+  set(CMAKE_HAVE_THREADS_LIBRARY 1)
+  set(CMAKE_USE_WIN32_THREADS_INIT 0)
+  set(CMAKE_USE_PTHREADS_INIT 1)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+endif()
 find_package(Threads REQUIRED)
 set(COBS_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} ${COBS_LINK_LIBRARIES})
 if(CMAKE_USE_PTHREADS_INIT)
@@ -158,23 +171,23 @@ set(COBS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/extlib/xxhash ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES xxhash ${COBS_LINK_LIBRARIES})
 
 ### use ZLIB ###
-if(NOT CONDA)
-  find_package(ZLIB REQUIRED)
-  set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
-else()
-  # this is required to find ZLIB in a conda env
-  set(COBS_INCLUDE_DIRS $ENV{CONDA_PREFIX}/include ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES $ENV{CONDA_PREFIX}/lib/libz.so ${COBS_LINK_LIBRARIES})
-endif()
+find_package(ZLIB REQUIRED)
+set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
+set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
 
-### use Boost filesystem ###
-find_package(Boost 1.42.0 COMPONENTS system filesystem)
-if(${Boost_FOUND})
-  set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
+### check if we should use BOOST ###
+if(BOOST)
+  if(DEFINED ENV{BOOST_INCLUDE_DIR} AND DEFINED ENV{BOOST_LIBRARY_DIR})
+    message(WARNING "NOT FINDING BOOST THROUGH CMAKE, USING ENV VARIABLES!")
+  else()
+    find_package(Boost 1.72.0 COMPONENTS system filesystem)
+    set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
+    set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
+  endif()
+  add_compile_definitions(COBS_USE_BOOST)
+else()
+  set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
 endif()
-set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
 
 ### use TLX ###
 add_subdirectory(extlib/tlx)
@@ -193,7 +206,11 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 # descend into python
-add_subdirectory(python)
+if(SKIP_PYTHON)
+  message(WARNING "SKIPPING PYTHON BINDINGS!")
+else()
+  add_subdirectory(python)
+endif()
 
 ################################################################################
 
