@@ -9,47 +9,47 @@ on:
       - master
 
 jobs:
-#  linux_build:
-#    name: Build and test linux
-#    runs-on: ubuntu-20.04
-#    steps:
-#    - name: Install dependencies
-#      run: |
-#        sudo apt-get install cmake
-#
-#    - name: Check out code for the build
-#      uses: actions/checkout@v2
-#      with:
-#        submodules: recursive
-#
-#    - name: Build and test
-#      run: |
-#        mkdir build
-#        cd build
-#        cmake ..
-#        make
-#        make test
-#
-#  mac_build_gcc:
-#    name: Build and test Mac OS X with gcc
-#    runs-on: macos-11
-#    steps:
-#      - name: Install dependencies
-#        run: |
-#          brew install cmake gcc@11
-#
-#      - name: Check out code for the build
-#        uses: actions/checkout@v2
-#        with:
-#          submodules: recursive
-#
-#      - name: Build and test
-#        run: |
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
-#          make
-#          make test
+  linux_build:
+    name: Build and test linux
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get install cmake
+
+    - name: Check out code for the build
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Build and test
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+        make test
+
+  mac_build_gcc:
+    name: Build and test Mac OS X with gcc
+    runs-on: macos-11
+    steps:
+      - name: Install dependencies
+        run: |
+          brew install cmake gcc@11
+
+      - name: Check out code for the build
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Build and test
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
+          make
+          make test
 
   mac_build_clang:
     name: Build and test Mac OS X with clang
