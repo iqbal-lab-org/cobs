@@ -41,7 +41,7 @@ TEST_F(mof_integration, classic_construct_mof_tests) {
     cobs::classic_construct(filelist, cobs_index_filepath,
                             work_dir / "cobs_indexes" / bacteria / "temp", index_params);
 
-    assert_equals_files(cobs_index_filepath, input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic"));
+    assert_equals_files_with_paths(cobs_index_filepath, input_dir / "COBS_out" / (std::string(bacteria)+".cobs_classic"));
   }
 }
 
@@ -61,9 +61,9 @@ TEST_F(mof_integration, queries__mof_tests) {
       cobs::process_query(s, 0.80000000000000004, 0, "", query_file.string(), query_out_fh);
 
       query_out_fh.close();
-      assert_equals_files(
-        (input_dir / (std::string(bacteria)+".query_results.query_length_"+query_length+".no_load_complete.txt")).string(),
-        query_out_filepath.string());
+      assert_equals_files_with_paths(
+        input_dir / (std::string(bacteria)+".query_results.query_length_"+query_length+".no_load_complete.txt"),
+        query_out_filepath);
     }
   }
 }

@@ -26,11 +26,6 @@
 using namespace cobs;
 
 static inline
-void assert_equals_files(const fs::path& f1, const fs::path& f2) {
-    return assert_equals_files(f1.string(), f2.string());
-}
-
-static inline
 void assert_equals_files(const std::string& f1, const std::string& f2) {
     std::ifstream ifs1(f1, std::ios::in | std::ios::binary);
     std::ifstream ifs2(f2, std::ios::in | std::ios::binary);
@@ -44,6 +39,11 @@ void assert_equals_files(const std::string& f1, const std::string& f2) {
     for (size_t i = 0; i < v1.size(); i++) {
         ASSERT_EQ(v1[i], v2[i]);
     }
+}
+
+static inline
+void assert_equals_files_with_paths(const fs::path& f1, const fs::path& f2) {
+  return assert_equals_files(f1.string(), f2.string());
 }
 
 //! Generate documents from a (random) query sequence
