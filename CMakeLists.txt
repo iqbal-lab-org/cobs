@@ -158,24 +158,20 @@ set(COBS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/extlib/xxhash ${COBS_INCLUDE_DIRS})
 set(COBS_LINK_LIBRARIES xxhash ${COBS_LINK_LIBRARIES})
 
 ### use ZLIB ###
-if(NOT CONDA)
-  find_package(ZLIB REQUIRED)
-  set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
-else()
-  # this is required to find ZLIB in a conda env
-  set(COBS_INCLUDE_DIRS $ENV{CONDA_PREFIX}/include ${COBS_INCLUDE_DIRS})
-  set(COBS_LINK_LIBRARIES $ENV{CONDA_PREFIX}/lib/libz.so ${COBS_LINK_LIBRARIES})
-endif()
+find_package(ZLIB REQUIRED)
+set(COBS_INCLUDE_DIRS ${ZLIB_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
+set(COBS_LINK_LIBRARIES ${ZLIB_LIBRARIES} ${COBS_LINK_LIBRARIES})
 
-### use Boost filesystem ###
-set(Boost_USE_STATIC_LIBS   ON)
-find_package(Boost 1.42.0 COMPONENTS system filesystem)
-set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
-set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
-message(STATUS "BOOST!!!")
-message(STATUS ${Boost_INCLUDE_DIRS})
-message(STATUS ${Boost_LIBRARIES})
+### check if we should use BOOST ###
+if(BOOST)
+  set(Boost_USE_STATIC_LIBS   ON)
+  find_package(Boost 1.72.0 COMPONENTS system filesystem)
+  set(COBS_INCLUDE_DIRS ${Boost_INCLUDE_DIRS} ${COBS_INCLUDE_DIRS})
+  set(COBS_LINK_LIBRARIES ${Boost_LIBRARIES} ${COBS_LINK_LIBRARIES})
+  add_compile_definitions(COBS_USE_BOOST)
+else()
+  set(COBS_LINK_LIBRARIES stdc++fs ${COBS_LINK_LIBRARIES})
+endif()
 
 ### use TLX ###
 add_subdirectory(extlib/tlx)
