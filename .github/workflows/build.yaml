@@ -76,7 +76,9 @@ jobs:
         run: |         
           # set up some variables so that CMake can find boost
           export BOOST_INCLUDE_DIR="/usr/local/opt/boost@1.76/include"
+          ls ${BOOST_INCLUDE_DIR}
           export BOOST_LIBRARY_DIR="/usr/local/opt/boost@1.76/lib"
+          ls ${BOOST_LIBRARY_DIR}
           export CXXFLAGS="-DUSE_BOOST -I${BOOST_INCLUDE_DIR} -L${BOOST_LIBRARY_DIR}"
           export LDFLAGS="-L${BOOST_LIBRARY_DIR} -lboost_filesystem -lboost_system"
           
