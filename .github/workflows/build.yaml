@@ -75,7 +75,7 @@ jobs:
 
       - name: Build and test
         run: |
-          ls /usr/local/Cellar/libomp/14.0.6
+          find /usr/local/Cellar/libomp/14.0.6/ -type f
           mkdir build
           cd build
           export LDFLAGS="-L/usr/local/opt/boost@1.76/lib"
