@@ -66,7 +66,7 @@ and optionally run `make test` to check the build.
 ### Using `clang`:
 
 1. Install `boost-1.76`: `brew install boost@1.76`
-2. Compile COBS with boost: `cmake -DBOOST=1 ..`
+2. Compile COBS with boost: `cmake ..`
 
 ## Troubleshooting
 
@@ -74,7 +74,7 @@ Several issues might arise from your specific configuration.
 
 ### Problems with openMP on Mac OS X
 
-If installing openMP does not work, add `-DNOOPENMP=1` argument to the `cmake` command.
+If installing OpenMP does not work, add `-DNOOPENMP=1` argument to the `cmake` command.
 
 ### Problems with python bindings
 
@@ -82,13 +82,10 @@ Skip python bindings compilation by adding `-DSKIP_PYTHON=1` argument to the `cm
 
 ### Problems with finding boost
 
-Define boost env variables and then compile:
+Define `BOOST_ROOT` env variable and then compile:
 ```
-export BOOST_INCLUDE_DIR="<boost_root>/include"
-export BOOST_LIBRARY_DIR="<boost_root>/lib"
-export CXXFLAGS="-DUSE_BOOST -I${BOOST_INCLUDE_DIR} -L${BOOST_LIBRARY_DIR}"
-export LDFLAGS="-L${BOOST_LIBRARY_DIR} -lboost_filesystem -lboost_system"
-cmake -DBOOST=1  ..
+export BOOST_ROOT="/usr/local/opt/boost@1.76"  # use your boost root path - this would be the path if installing boost using brew on Mac OS X
+cmake  ..
 ```
 
 ## Building an Index
