@@ -70,6 +70,6 @@ jobs:
           export BOOST_ROOT="/usr/local/opt/boost@1.76"        
           mkdir build
           cd build
-          cmake -DBOOST=1 -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
+          cmake -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
           make
           make test
