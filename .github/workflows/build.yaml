@@ -67,11 +67,7 @@ jobs:
       - name: Build and test
         run: |         
           # set up some variables so that CMake can find boost
-          export BOOST_INCLUDE_DIR="/usr/local/opt/boost@1.76/include"
-          export BOOST_LIBRARY_DIR="/usr/local/opt/boost@1.76/lib"
-          export CXXFLAGS="-DUSE_BOOST -I${BOOST_INCLUDE_DIR} -L${BOOST_LIBRARY_DIR}"
-          export LDFLAGS="-L${BOOST_LIBRARY_DIR} -lboost_filesystem -lboost_system"
-          
+          export BOOST_ROOT="/usr/local/opt/boost@1.76"        
           mkdir build
           cd build
           cmake -DBOOST=1 -DNOOPENMP=1 -DSKIP_PYTHON=1 ..
