@@ -36,17 +36,20 @@ void ClassicIndexHeader::serialize(std::ostream& os) const {
 }
 
 void ClassicIndexHeader::deserialize(std::istream& is) {
-    deserialize_magic_begin(is, magic_word, version);
+    std::streamsize nb_of_bytes_read = 0;
+    nb_of_bytes_read += deserialize_magic_begin(is, magic_word, version);
 
     uint32_t file_names_size;
-    stream_get(is, term_size_, canonicalize_,
+    nb_of_bytes_read += stream_get(is, term_size_, canonicalize_,
                file_names_size, signature_size_, num_hashes_);
     file_names_.resize(file_names_size);
     for (auto& file_name : file_names_) {
         std::getline(is, file_name);
+        nb_of_bytes_read += file_name.size() + 1;
     }
 
-    deserialize_magic_end(is, magic_word);
+    nb_of_bytes_read += deserialize_magic_end(is, magic_word);
+    header_size_ = nb_of_bytes_read;
 }
 
 void ClassicIndexHeader::write_file(std::ostream& os,
