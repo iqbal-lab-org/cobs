@@ -501,16 +501,51 @@ int query(int argc, char** argv) {
         'T', "threads", cobs::gopt_threads,
         "number of threads to use, default: max cores");
 
+    std::vector<std::string> index_sizes_str;
+    cp.add_stringlist(
+      "index-sizes", index_sizes_str, "WARNING: HIDDEN OPTION. USE ONLY IF YOU KNOW WHAT YOU ARE DOING. "
+                                      "Precomputed file sizes of the index. Useful if --load-complete is given and "
+                                      "indexes are streamed into COBS. This is a hidden option to be used with mof. "
+                                      "This also implies COBS classic index, skipping double header reading due to "
+                                      "streaming.");
+
     if (!cp.sort().process(argc, argv))
         return -1;
 
     std::vector<cobs::fs::path> index_paths;
     for (const std::string &file : index_files) {
-      index_paths.push_back(cobs::fs::path(file));
+        index_paths.push_back(cobs::fs::path(file));
     }
-    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices = cobs::get_cobs_indexes_given_files(index_paths);
+    std::vector<int64_t> index_sizes;
+    for (const std::string &index_size_str : index_sizes_str) {
+        index_sizes.push_back(std::stoll(index_size_str));
+    }
+    const bool index_sizes_was_given = index_sizes.size() > 0;
+    if (index_sizes_was_given) {
+        die_verbose_unequal(index_paths.size(), index_sizes.size(), "If --index-sizes is used, COBS needs a size for each index.");
+    }
+
+    std::vector<std::ifstream*> streams;
+    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices;
+    if (index_sizes_was_given) {
+        for (const cobs::fs::path &index_path : index_paths) {
+            auto* stream = new std::ifstream(index_path);
+            streams.push_back(stream);
+        }
+        indices = cobs::get_cobs_indexes_given_streams(streams, index_sizes);
+    }
+    else {
+        indices = cobs::get_cobs_indexes_given_files(index_paths);
+    }
+
     cobs::ClassicSearch s(indices);
     cobs::process_query(s, threshold, num_results, query, query_file);
+
+    if (index_sizes_was_given) {
+        for (auto* stream : streams) {
+            delete stream;
+        }
+    }
 
     return 0;
 }

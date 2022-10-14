@@ -18,6 +18,12 @@ ClassicIndexSearchFile::ClassicIndexSearchFile(const fs::path& path) {
     stream_pos_ = get_stream_pos(ifs);
 }
 
+ClassicIndexSearchFile::ClassicIndexSearchFile(std::ifstream &ifs, int64_t index_file_size) {
+    header_ = deserialize_header<ClassicIndexHeader>(ifs);
+    stream_pos_ = StreamPos { (uint64_t) header_.header_size_, (uint64_t) index_file_size};
+}
+
+
 uint64_t ClassicIndexSearchFile::counts_size() const {
     return 8 * header_.row_size();
 }

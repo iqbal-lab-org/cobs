@@ -85,20 +85,21 @@ void stream_put(std::ostream& os, const T& t, const Args& ... args) {
 
 //! read a POD from an istream
 template <typename T>
-void stream_get_pod(std::istream& is, T& t) {
+std::streamsize stream_get_pod(std::istream& is, T& t) {
     static_assert(std::is_pod<T>::value, "T must be POD");
     is.read(reinterpret_cast<char*>(&t), sizeof(T));
+    return is.gcount();
 }
 
 //! read a list of PODs from an istream
 static inline
-void stream_get(std::istream& /* is */) { }
+std::streamsize stream_get(std::istream& /* is */) { return 0; }
 
 //! read a list of PODs from an istream
 template <typename T, typename... Args>
-void stream_get(std::istream& is, T& t, Args& ... args) {
-    stream_get_pod(is, t);
-    stream_get(is, args...);
+std::streamsize stream_get(std::istream& is, T& t, Args& ... args) {
+    std::streamsize nb_of_bytes_from_pod = stream_get_pod(is, t);
+    return nb_of_bytes_from_pod + stream_get(is, args...);
 }
 
 } // namespace cobs

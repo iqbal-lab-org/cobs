@@ -20,6 +20,12 @@ ClassicIndexMMapSearchFile::ClassicIndexMMapSearchFile(const fs::path& path)
     data_ = handle_.data + stream_pos_.curr_pos;
 }
 
+ClassicIndexMMapSearchFile::ClassicIndexMMapSearchFile(std::ifstream &ifs, int64_t index_file_size)
+    : ClassicIndexSearchFile(ifs, index_file_size) {
+    handle_ = initialize_stream(ifs, stream_pos_.size());
+    data_ = handle_.data;
+}
+
 ClassicIndexMMapSearchFile::~ClassicIndexMMapSearchFile() {
     destroy_mmap(handle_);
 }
