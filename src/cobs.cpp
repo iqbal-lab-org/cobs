@@ -529,7 +529,7 @@ int query(int argc, char** argv) {
     std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices;
     if (index_sizes_was_given) {
         for (const cobs::fs::path &index_path : index_paths) {
-            auto* stream = new std::ifstream(index_path);
+            auto* stream = new std::ifstream(index_path.string());
             streams.push_back(stream);
         }
         indices = cobs::get_cobs_indexes_given_streams(streams, index_sizes);
