@@ -8,7 +8,7 @@ namespace fs = cobs::fs;
 static fs::path base_dir = "data/mof_integration_tests";
 static fs::path input_dir = base_dir / "subsampled_integration_test";
 static fs::path work_dir = base_dir / "work";
-static const std::vector<const char *> species{"neisseria_gonorrhoeae__01", "dustbin__01", "chlamydia_pecorum__01"};
+static const std::vector<const char *> species{"neisseria_gonorrhoeae__01", "chlamydia_pecorum__01"};
 static const std::vector<const char *> query_lengths{"100", "200", "500", "1000"};
 
 class mof_integration : public ::testing::Test
