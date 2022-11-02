@@ -78,6 +78,21 @@ static inline std::vector<std::shared_ptr<cobs::IndexSearchFile> > get_cobs_inde
   return indices;
 }
 
+static inline std::vector<std::shared_ptr<cobs::IndexSearchFile> > get_cobs_indexes_given_streams (
+    const std::vector<std::ifstream*> &streams, const std::vector<int64_t> &index_sizes) {
+
+    std::vector<std::shared_ptr<cobs::IndexSearchFile> > indices;
+    for (size_t i=0; i<streams.size(); i++)
+    {
+        std::ifstream *stream = streams[i];
+        int64_t index_file_size = index_sizes[i];
+        indices.push_back(
+          std::make_shared<cobs::ClassicIndexMMapSearchFile>(*stream, index_file_size));
+    }
+
+    return indices;
+}
+
 static inline void process_query(
   cobs::Search &s, double threshold, unsigned num_results,
   const std::string &query_line, const std::string &query_file,

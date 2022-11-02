@@ -25,6 +25,7 @@ protected:
 
 public:
     explicit ClassicIndexMMapSearchFile(const fs::path& path);
+    explicit ClassicIndexMMapSearchFile(std::ifstream &ifs, int64_t index_file_size);
     ~ClassicIndexMMapSearchFile();
 };
 

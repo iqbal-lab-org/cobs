@@ -18,6 +18,7 @@ class ClassicIndexSearchFile : public IndexSearchFile
 {
 protected:
     explicit ClassicIndexSearchFile(const fs::path& path);
+    explicit ClassicIndexSearchFile(std::ifstream &ifs, int64_t index_file_size);
 
     uint32_t term_size() const final { return header_.term_size_; }
     uint8_t canonicalize() const final { return header_.canonicalize_; }

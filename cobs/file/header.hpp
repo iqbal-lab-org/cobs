@@ -20,12 +20,13 @@
 namespace cobs {
 
 static inline
-void check_magic_word(std::istream& is, const std::string& magic_word) {
+std::streamsize check_magic_word(std::istream& is, const std::string& magic_word) {
     std::vector<char> mw_v(magic_word.size(), ' ');
     is.read(mw_v.data(), magic_word.size());
     std::string mw(mw_v.data(), mw_v.size());
     assert_throw<FileIOException>(mw == magic_word, "invalid file type");
     assert_throw<FileIOException>(is.good(), "input filestream broken");
+    return is.gcount();
 }
 
 static inline
@@ -43,19 +44,21 @@ void serialize_magic_end(
 }
 
 static inline
-void deserialize_magic_begin(
+std::streamsize deserialize_magic_begin(
     std::istream& is, const std::string& magic_word, const uint32_t& version) {
-    check_magic_word(is, "COBS:");
-    check_magic_word(is, magic_word);
+    std::streamsize nb_of_bytes_read = 0;
+    nb_of_bytes_read += check_magic_word(is, "COBS:");
+    nb_of_bytes_read += check_magic_word(is, magic_word);
     uint32_t v;
-    stream_get(is, v);
+    nb_of_bytes_read += stream_get(is, v);
     assert_throw<FileIOException>(v == version, "invalid file version");
+    return nb_of_bytes_read;
 }
 
 static inline
-void deserialize_magic_end(
+std::streamsize deserialize_magic_end(
     std::istream& is, const std::string& magic_word) {
-    check_magic_word(is, magic_word);
+    return check_magic_word(is, magic_word);
 }
 
 } // namespace cobs

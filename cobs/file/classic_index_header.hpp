@@ -26,6 +26,8 @@ public:
     uint64_t num_hashes_;
     //! list of document file names
     std::vector<std::string> file_names_;
+    //! header size in bytes
+    std::streamsize header_size_;
 
 public:
     static const std::string magic_word;

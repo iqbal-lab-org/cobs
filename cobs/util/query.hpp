@@ -30,6 +30,7 @@ struct MMapHandle {
 };
 
 MMapHandle initialize_mmap(const fs::path& path);
+MMapHandle initialize_stream(std::ifstream& is, int64_t index_file_size);
 void destroy_mmap(MMapHandle& handle);
 
 //! Canonicalize a k-mer. Given an input k-mer of length size, checks if should

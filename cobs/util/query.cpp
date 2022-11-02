@@ -30,8 +30,10 @@ int open_file(const fs::path& path, int flags) {
 }
 
 void close_file(int fd) {
-    if (close(fd)) {
-        print_errno("could not close index file");
+    if (fd>=0) {
+        if (close(fd)) {
+            print_errno("could not close index file");
+        }
     }
 }
 
@@ -86,6 +88,43 @@ MMapHandle initialize_mmap(const fs::path& path)
                    fd, data_ptr, uint64_t(size)
         };
     }
+}
+
+MMapHandle initialize_stream(std::ifstream& is, int64_t index_file_size)
+{
+  off_t size = index_file_size;
+  LOG1 << "Reading complete index from stream";
+  void* ptr = nullptr;
+  if (posix_memalign(&ptr, 2 * 1024 * 1024, size)) {
+    print_errno("posix_memalign()");
+  }
+  char* data_ptr = reinterpret_cast<char*>(ptr);
+#if defined(MADV_HUGEPAGE)
+  if (madvise(data_ptr, size, MADV_HUGEPAGE)) {
+    print_errno("madvise failed for MADV_HUGEPAGE");
+  }
+  LOG1 << "Advising to use huge pages";
+#endif
+  uint64_t remain = size;
+  const uint64_t one_gb = 1024*1024*1024;
+  uint64_t pos = 0;
+  while (remain != 0) {
+    is.read(data_ptr + pos, std::min(one_gb, remain));
+    int64_t rb = is.gcount();
+    if (rb < 0) {
+      print_errno("read failed");
+      break;
+    }
+    remain -= rb;
+    pos += rb;
+        LOG1 << "Read " << tlx::format_iec_units(pos)
+             << "B / " << tlx::format_iec_units(size) << "B - "
+             << pos * 100 / size << "%";
+  }
+  LOG1 << "Index loaded into RAM.";
+  return MMapHandle {
+    -1 /* not a valid fd, won't be closed */, reinterpret_cast<uint8_t*>(data_ptr), uint64_t(size)
+  };
 }
 
 void destroy_mmap(MMapHandle& handle)

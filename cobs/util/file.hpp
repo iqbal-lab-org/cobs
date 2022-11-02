@@ -16,6 +16,7 @@
 #include <cobs/util/fs.hpp>
 
 #include <tlx/die.hpp>
+#include <tlx/logger.hpp>
 
 namespace cobs {
 
@@ -38,6 +39,14 @@ Header deserialize_header(std::ifstream& ifs, const fs::path& p) {
     ifs.exceptions(std::ios::eofbit | std::ios::failbit | std::ios::badbit);
     ifs.open(p.string(), std::ios::in | std::ios::binary);
     die_unless(ifs.good());
+    Header h;
+    h.deserialize(ifs);
+    return h;
+}
+
+template <class Header>
+Header deserialize_header(std::ifstream& ifs) {
+    LOG1 << "Deserializing header from stream";
     Header h;
     h.deserialize(ifs);
     return h;
