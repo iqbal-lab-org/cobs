@@ -189,6 +189,9 @@ endif()
 add_subdirectory(extlib/tlx)
 set(COBS_LINK_LIBRARIES tlx ${COBS_LINK_LIBRARIES})
 
+### use kseq ###
+include_directories(extlib/kseq)
+
 ################################################################################
 ### Descend into Subdirectories
 
