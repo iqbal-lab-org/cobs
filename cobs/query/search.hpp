@@ -19,7 +19,9 @@
 #include <cobs/file/classic_index_header.hpp>
 #include <cobs/query/compact_index/mmap_search_file.hpp>
 #include <cobs/query/classic_index/mmap_search_file.hpp>
-
+#include <zlib.h>
+#include <kseq.h>
+KSEQ_INIT(gzFile, gzread)
 
 
 namespace cobs {
@@ -106,43 +108,25 @@ static inline void process_query(
       output_stream << res.doc_name << '\t' << res.score << '\n';
     }
   } else if (!query_file.empty()) {
-    std::ifstream qf(query_file);
-    std::string line, query, comment;
+    gzFile fp = gzopen(query_file.c_str(), "r");
+    if (!fp)
+      die("Could not open query file: " + query_file);
 
-    while (std::getline(qf, line)) {
-      if (line.empty())
-        continue;
+    kseq_t *seq = kseq_init(fp);
+    while (kseq_read(seq) >= 0) {
+      std::string comment(seq->name.s ? seq->name.s : "");
+      std::string query(seq->seq.s ? seq->seq.s : "");
 
-      if (line[0] == '>' || line[0] == ';') {
-        if (!query.empty()) {
-          // perform query
-          s.search(query, result, threshold, num_results);
-          output_stream << comment << '\t' << result.size() << '\n';
-
-          for (const auto &res: result) {
-            output_stream << res.doc_name << '\t' << res.score << '\n';
-          }
-        }
-
-        // clear and copy query comment
-        line[0] = '*';
-        query.clear();
-        comment = line;
-        continue;
-      } else {
-        query += line;
-      }
-    }
-
-    if (!query.empty()) {
       // perform query
       s.search(query, result, threshold, num_results);
-      output_stream << comment << '\t' << result.size() << '\n';
+      output_stream << "*" << comment << '\t' << result.size() << '\n';
 
       for (const auto &res: result) {
         output_stream << res.doc_name << '\t' << res.score << '\n';
       }
     }
+    kseq_destroy(seq);
+    gzclose(fp);
   } else {
     die("Pass a verbatim query or a query file.");
   }

@@ -53,17 +53,19 @@ TEST_F(mof_integration, queries__mof_tests) {
     cobs::ClassicSearch s(indices);
 
     for (const char* query_length : query_lengths) {
-      fs::path query_file = input_dir / (std::string(bacteria) + "_queries.query_length_" + query_length + ".fa");
-      auto query_out_filepath = work_dir / "query_out" / bacteria / query_length / "query.out";
-      fs::create_directories(query_out_filepath.parent_path());
-      std::ofstream query_out_fh(query_out_filepath.string());
+      for (const char* extension : {".fa", ".fq.gz"}) {
+        fs::path query_file = input_dir / (std::string(bacteria) + "_queries.query_length_" + query_length + extension);
+        auto query_out_filepath = work_dir / "query_out" / bacteria / query_length / "query.out";
+        fs::create_directories(query_out_filepath.parent_path());
+        std::ofstream query_out_fh(query_out_filepath.string());
 
-      cobs::process_query(s, 0.80000000000000004, 0, "", query_file.string(), query_out_fh);
+        cobs::process_query(s, 0.80000000000000004, 0, "", query_file.string(), query_out_fh);
 
-      query_out_fh.close();
-      assert_equals_files_with_paths(
-        input_dir / (std::string(bacteria)+".query_results.query_length_"+query_length+".no_load_complete.txt"),
-        query_out_filepath);
+        query_out_fh.close();
+        assert_equals_files_with_paths(
+          input_dir / (std::string(bacteria) + ".query_results.query_length_" + query_length + ".no_load_complete.txt"),
+          query_out_filepath);
+      }
     }
   }
 }
