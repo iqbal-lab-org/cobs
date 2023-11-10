@@ -49,6 +49,15 @@ public:
 
     void read_file(std::istream& is, std::vector<uint8_t>& data);
     void read_file(const fs::path& p, std::vector<uint8_t>& data);
+
+    std::string to_string() const {
+      std::stringstream ss;
+      ss << "k-mer or q-gram size = " << term_size_ << "\n";
+      ss << "signature size (size of Bloom filters in bits = number of rows in matrix) = " << signature_size_ << "\n";
+      ss << "number of hashes per term = " << num_hashes_ << "\n";
+      ss << "header size in bytes = " << header_size_ << "\n";
+      return ss.str();
+    }
 };
 
 } // namespace cobs

@@ -66,6 +66,8 @@ static inline std::vector<std::shared_ptr<cobs::IndexSearchFile> > get_cobs_inde
   for (auto& path : index_files)
   {
     if (cobs::file_has_header<cobs::ClassicIndexHeader>(path)) {
+      auto header = deserialize_header<cobs::ClassicIndexHeader>(path);
+      LOG1 << header.to_string();
       indices.push_back(
         std::make_shared<cobs::ClassicIndexMMapSearchFile>(path));
     }
