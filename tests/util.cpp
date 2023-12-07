@@ -50,13 +50,13 @@ TEST(util, kmer_canonicalize) {
 
     // one kmer already canonical but containing invalid letters
     test_kmer("AGGAAAGTCTTTTACGCTGGGXXXAGAGTGA",
-              "AGGAAAGTCTTTTACGCTGGG\0\0\0AGAGTGA", false);
+              "AGGAAAGTCTTTTACGCTGGGAAAAGAGTGA", true);
     // one k-mer needing flipping containing invalid letters
     test_kmer("TGGAAAGTCTTTTACGCTGGGXXXAGAGTGA",
-              "TCACTCT\0\0\0CCCAGCGTAAAAGACTTTCCA", false);
+              "TCACTCTTTTCCCAGCGTAAAAGACTTTCCA", true);
     // one kmer containing the invalid letter at the center
     test_kmer("AAAAAAAAAAAAAAAXTTTTTTTTTTTTTTT",
-              "AAAAAAAAAAAAAAA\0TTTTTTTTTTTTTTT", false);
+              "AAAAAAAAAAAAAAAATTTTTTTTTTTTTTT", true);
 }
 
 /******************************************************************************/

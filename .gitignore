@@ -11,3 +11,4 @@ python/docs/_generated
 __pycache__
 cobs*.tar
 cobs*.tar.gz
+!tests/data/non_acgt_test/index.cobs_classic
