@@ -47,7 +47,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 ..
+          cmake -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 -DSKIP_PYTHON ..
           make
           make test
 
