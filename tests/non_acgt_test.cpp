@@ -23,7 +23,7 @@ protected:
 
 TEST_F(non_acgt_test, non_acgt_test_main_test) {
     fs::path index_file{base_dir / "index.cobs_classic"};
-    cobs::ClassicSearch s(index_file);
+    cobs::ClassicSearch s(index_file.string());
     fs::path query_file{base_dir / "test_1.fastq.gz"};
     auto query_out_filepath = work_dir / "query.out";
     std::ofstream query_out_fh(query_out_filepath.string());
