@@ -10,7 +10,7 @@ on:
 
 jobs:
   linux_build:
-    name: Build and test python on linux with Python ${{ matrix.python-version }}
+    name: Build and test with Python ${{ matrix.python-version }} (Linux)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,7 +23,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Check out code for the build
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -33,15 +33,23 @@ jobs:
         python -m unittest discover python/tests
 
   mac_build_clang:
-    name: Build and test python on Mac OS X with clang
-    runs-on: macos-11
+    name: Build and test with Python ${{ matrix.python-version }} (macOS)
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+      fail-fast: false
     steps:
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+        python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           brew install boost@1.76
 
       - name: Check out code for the build
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
