@@ -1,0 +1,52 @@
+name: COBS Python
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  linux_build:
+    name: Build and test python on linux with Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Check out code for the build
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Build and test
+      run: |
+        pip install .
+        python -m unittest discover python/tests
+
+  mac_build_clang:
+    name: Build and test python on Mac OS X with clang
+    runs-on: macos-11
+    steps:
+      - name: Install dependencies
+        run: |
+          brew install boost@1.76
+
+      - name: Check out code for the build
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Build and test
+        run: |         
+          # set up some variables so that CMake can find boost
+          export BOOST_ROOT="/usr/local/opt/boost@1.76"        
+          pip install .
+          python -m unittest discover python/tests
