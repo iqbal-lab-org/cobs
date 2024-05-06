@@ -12,3 +12,7 @@ __pycache__
 cobs*.tar
 cobs*.tar.gz
 !tests/data/non_acgt_test/index.cobs_classic
+.devcontainer/
+cobs_index.egg-info
+*.so
+*.bin

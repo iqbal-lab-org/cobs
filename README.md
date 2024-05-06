@@ -48,13 +48,13 @@ COBS requires CMake, a C++17 compiler or the Boost.Filesystem library.
 
 To download and install COBS run:
 ```
-git clone --recursive https://github.com/bingmann/cobs.git
+git clone --recursive https://github.com/iqbal-lab-org/cobs.git
 mkdir cobs/build
 cd cobs/build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j4
 ```
-and optionally run `make test` to check the build.
+and optionally run `make test` to check the build. Note that to download submodules, `--recursive` has to be provided.
 
 ## OS X compilation
 
