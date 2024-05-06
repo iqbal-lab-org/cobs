@@ -54,8 +54,6 @@ jobs:
           submodules: recursive
 
       - name: Build and test
-        run: |         
-          # set up some variables so that CMake can find boost
-          export BOOST_ROOT="/usr/local/opt/boost@1.76"        
+        run: |   
           pip install .
           python -m unittest discover python/tests
