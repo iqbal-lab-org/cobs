@@ -46,7 +46,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          brew install boost-python
+          brew install boost-python3
 
       - name: Check out code for the build
         uses: actions/checkout@v4
