@@ -108,7 +108,7 @@ function version () {
 
 # Internal variables and initializations.
 readonly PROGRAM=`basename "$0"`
-readonly VERSION=0.3
+readonly VERSION=0.3.1
 
 SEPARATE=0
 VERBOSE=0
